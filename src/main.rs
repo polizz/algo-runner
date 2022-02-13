@@ -1,6 +1,4 @@
-use argh;
-
-use percolate::Percolator;
+use percolate::UF;
 
 mod args;
 use args::*;
@@ -12,6 +10,6 @@ fn main() {
 
     println!("args: n => {}, trials => {}", n, trials);
 
-    let perc = Percolator::new(n);
+    let perc = UF::new(5);
     println!("{:?}", &perc);
 }
