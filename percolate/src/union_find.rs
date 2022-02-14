@@ -21,15 +21,16 @@ impl UF<usize> {
         }
     }
 
-    pub fn root_of(&self, mut i: usize) -> usize {
+    pub fn root_of(&mut self, mut i: usize) -> usize {
         while self.sites[i] != i {
+            self.sites[i] = self.sites[self.sites[i]];
             i = self.sites[i];
         }
 
         i
     }
 
-    pub fn connected(&self, p: usize, q: usize) -> bool {
+    pub fn connected(&mut self, p: usize, q: usize) -> bool {
         self.root_of(p) ==  self.root_of(q)
     } 
 
@@ -79,6 +80,16 @@ mod tests {
 
         assert_eq!([3, 3], &uf.sites[3..=4]);
         assert_eq!(2, uf.tree_depths[4]);
+    }
+
+    #[test]
+    fn can_see_connected_sites() {
+        let mut uf = UF::new(5);
+        uf.union(2, 3);
+        uf.union(4, 3);
+
+        assert_eq!(true, uf.connected(2, 3));
+        assert_eq!(true, uf.connected(3, 4));
     }
 
     #[test]
