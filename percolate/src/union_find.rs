@@ -5,7 +5,7 @@ pub struct UF<T> {
 }
 
 impl UF<usize> {
-    pub fn new(n: usize) -> UF<usize> {
+    pub fn new(n: usize) -> Self {
         let mut sites = vec![0; n];
         let tree_depths = vec![1; n];
 
@@ -47,10 +47,10 @@ impl UF<usize> {
         // attach the smaller tree to the root of the bigger tree
         if self.tree_depths[p_root] > self.tree_depths[q_root] {
             self.sites[q_root] = p_root;
-            self.tree_depths[p_root] = self.tree_depths[p_root] + self.tree_depths[q_root]
+            self.tree_depths[q_root] = self.tree_depths[q_root] + self.tree_depths[p_root];
         } else {
             self.sites[p_root] = q_root;
-            self.tree_depths[q_root] = self.tree_depths[q_root] + self.tree_depths[p_root]
+            self.tree_depths[p_root] = self.tree_depths[p_root] + self.tree_depths[q_root];
         }
     }
 }
@@ -73,12 +73,12 @@ mod tests {
         uf.union(2, 3);
 
         assert_eq!([3, 3], &uf.sites[2..=3]);
-        assert_eq!(2, uf.tree_depths[3]);
+        assert_eq!(2, uf.tree_depths[2]);
 
         uf.union(4, 3);
 
         assert_eq!([3, 3], &uf.sites[3..=4]);
-        assert_eq!(3, uf.tree_depths[3]);
+        assert_eq!(2, uf.tree_depths[4]);
     }
 
     #[test]
