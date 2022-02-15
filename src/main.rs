@@ -1,4 +1,4 @@
-use percolate::UF;
+use percolate::Simulation;
 
 mod args;
 use args::*;
@@ -10,6 +10,7 @@ fn main() {
 
     println!("args: n => {}, trials => {}", n, trials);
 
-    let perc = UF::new(5);
-    println!("{:?}", &perc);
+    let mut sim = Simulation::new(n, trials as u32);
+    
+    sim.start();
 }

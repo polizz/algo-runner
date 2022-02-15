@@ -35,22 +35,21 @@ impl UF<usize> {
     } 
 
     pub fn union(&mut self, p: usize, q: usize) {
-        let p_id = self.sites[p];
-        let q_id = self.sites[q];
-
-        if p_id == q_id {
-            ()
-        }
-
         let p_root = self.root_of(p);
         let q_root = self.root_of(q);
 
+        // println!("un call: {p}, {q}, roots: {p_root};{q_root}, depths: {:?};{:?}", self.tree_depths[p_root], self.tree_depths[q_root]);
+
+        if p_root == q_root {
+            return
+        }
+
         // attach the smaller tree to the root of the bigger tree
-        if self.tree_depths[p_root] > self.tree_depths[q_root] {
-            self.sites[q_root] = p_root;
+        if self.tree_depths[p_root] < self.tree_depths[q_root] {
+            self.sites[p_root] = q_root;
             self.tree_depths[q_root] = self.tree_depths[q_root] + self.tree_depths[p_root];
         } else {
-            self.sites[p_root] = q_root;
+            self.sites[q_root] = p_root;
             self.tree_depths[p_root] = self.tree_depths[p_root] + self.tree_depths[q_root];
         }
     }
@@ -73,13 +72,14 @@ mod tests {
         let mut uf = UF::new(5);
         uf.union(2, 3);
 
-        assert_eq!([3, 3], &uf.sites[2..=3]);
+        assert_eq!([2, 2], &uf.sites[2..=3]);
         assert_eq!(2, uf.tree_depths[2]);
-
+        
         uf.union(4, 3);
 
-        assert_eq!([3, 3], &uf.sites[3..=4]);
-        assert_eq!(2, uf.tree_depths[4]);
+        assert_eq!([2, 2], &uf.sites[3..=4]);
+        assert_eq!(1, uf.tree_depths[4]);
+        assert_eq!(3, uf.tree_depths[2]);
     }
 
     #[test]
@@ -97,6 +97,28 @@ mod tests {
         let mut uf = UF::new(5);
         uf.union(2, 4);
 
-        assert_eq!(4, uf.root_of(2));
+        println!("AFTER: {:?}", uf);
+
+        assert_eq!(2, uf.root_of(2));
+        assert_eq!(2, uf.root_of(4));
+    }
+
+    #[test]
+    fn multiple_unions_on_same_site() {
+        let mut uf = UF::new(9+2);
+        uf.union(8, 10);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+        uf.union(2, 0);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+        uf.union(9, 8);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+        uf.union(9, 10);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+        uf.union(9, 10);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+        uf.union(9, 10);
+        println!("multiple_unions_on_same_site: {:?}", uf);
+
+        assert_eq!(3, uf.tree_depths[8]);
     }
 }

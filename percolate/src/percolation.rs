@@ -28,9 +28,13 @@ impl Percolator {
   }
 
   pub fn open(&mut self, site: usize) {
-    self.open_sites[site] = true;
-
-    self.connect_open_neighbors(site)
+    match self.is_open(site) {
+      false => {
+        self.open_sites[site] = true;
+        self.connect_open_neighbors(site);
+      }
+      true => (),
+    }
   }
 
   pub fn is_open(&self, site: usize) -> bool {
@@ -40,7 +44,6 @@ impl Percolator {
   pub fn is_full(&mut self, site: usize) -> bool {
     self.union_find.connected(0, site)
   }
-  // fn set_random_open_sites(union_find: &mut UF<size>) {}
 
   pub fn number_of_open_sites(&self) -> usize {
     self.open_sites.iter()
@@ -52,11 +55,15 @@ impl Percolator {
     let bottom_virtual_site = self.open_sites.len() - 1;
     self.union_find.connected(0, bottom_virtual_site)
   }
-  
+
   fn connect_open_neighbors(&mut self, site: usize) {
     let num_sites = self.num_sites;
     let bottom_virt_site = num_sites + 1;
     let n = self.n;
+
+    // top row should get connected to 0-node, no further up calculation
+
+    // site 1 should get connected to 0-node, no behind calculation
 
     if site <= n {
       self.union_find.union(site, 0);
@@ -74,7 +81,7 @@ impl Percolator {
       let behind = site - 1;
 
       if self.open_sites[behind] {
-        self.union_find.union(behind, site);
+        self.union_find.union(site, behind);
       }    
     }
 
@@ -87,6 +94,9 @@ impl Percolator {
       self.union_find.union(site, bottom_virt_site);
     }
 
+    if site >= num_sites {
+
+    }
     let down = site + n;
     if down <= bottom_virt_site {
       if self.open_sites[down] {
@@ -128,6 +138,15 @@ mod tests {
     assert_eq!(&true, &perc.percolates());
   }
 
+  #[test]
+  fn open_site_count_correct(){
+    let mut perc = Percolator::new(4);
+    let perc_ref = &mut perc;
+
+    (1..10).for_each(|site| perc_ref.open(site));
+
+    assert_eq!(9, perc.number_of_open_sites());
+  }
 
   #[test]
   fn percolates_when_just_enough_open() {
