@@ -10,7 +10,8 @@ pub struct TopLevel {
 #[derive(FromArgs, Debug)]
 #[argh(subcommand)]
 pub enum SubCommand {
-    Percolate(PercolateArgs)
+    Percolate(PercolateArgs),
+    GridTravel(GridTravelArgs)
 }
 
 #[derive(FromArgs, Debug)]
@@ -20,4 +21,13 @@ pub struct PercolateArgs {
     pub trials: usize,
     #[argh(option, description = "n", short = 'n')]
     pub n: usize,
+}
+
+#[derive(FromArgs, Debug)]
+#[argh(subcommand, name = "gridtravel", description = "How many ways can you travel through a grid")]
+pub struct GridTravelArgs {
+    #[argh(option,  description = "rows", short = 'm')]
+    pub rows: usize,
+    #[argh(option, description = "cols", short = 'n')]
+    pub columns: usize,
 }

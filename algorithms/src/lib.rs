@@ -6,3 +6,6 @@ pub use percolation::Percolator;
 
 mod monte_carlo;
 pub use monte_carlo::Simulation;
+
+mod grid_travel;
+pub use grid_travel::get_all_grid_paths;

@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 argh = "0.1.7"
-percolate = { path = "./percolate" }
+algorithms = { path = "./algorithms" }
 
 [workspace]
 members = [
-  "percolate",
+  "algorithms",
 ]
