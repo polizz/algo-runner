@@ -11,7 +11,8 @@ pub struct TopLevel {
 #[argh(subcommand)]
 pub enum SubCommand {
     Percolate(PercolateArgs),
-    GridTravel(GridTravelArgs)
+    GridTravel(GridTravelArgs),
+    CanSum(CanSumArgs)
 }
 
 #[derive(FromArgs, Debug)]
@@ -30,4 +31,13 @@ pub struct GridTravelArgs {
     pub rows: usize,
     #[argh(option, description = "cols", short = 'n')]
     pub columns: usize,
+}
+
+#[derive(FromArgs, Debug)]
+#[argh(subcommand, name = "cansum", description = "Can you arrive at a target sum with provided integers")]
+pub struct CanSumArgs {
+    #[argh(option,  description = "target", short = 't')]
+    pub target: i32,
+    #[argh(option, description = "nums", short = 'n')]
+    pub nums: Vec<i32>,
 }
