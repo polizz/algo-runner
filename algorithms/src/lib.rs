@@ -7,29 +7,20 @@ pub use percolation::Percolator;
 mod monte_carlo;
 pub use monte_carlo::Simulation;
 
-mod grid_travel;
-pub use grid_travel::get_all_grid_paths;
-
-mod can_sum;
-pub use can_sum::can_sum;
-
-mod how_sum;
-pub use how_sum::how_sum;
-
-mod best_sum;
-pub use best_sum::best_sum;
-
-mod can_construct;
-pub use can_construct::can_construct;
-
-mod count_construct;
-pub use count_construct::can_construct_count;
-
-mod all_construct;
-pub use all_construct::can_all_construct;
-
-mod fib;
-pub use fib::calc_fib_recurse;
-
-mod fib_tab;
-pub use fib_tab::{calc_fib, two_num_calc_fib};
+mod dp;
+pub use dp::grid_travel::get_all_grid_paths;
+pub use dp::can_sum::can_sum;
+pub use dp::how_sum::how_sum;
+pub use dp::best_sum::best_sum;
+pub use dp::can_construct::can_construct;
+pub use dp::count_construct::can_construct_count;
+pub use dp::all_construct::can_all_construct;
+pub use dp::fib::calc_fib_recurse;
+pub use dp::fib_tab::{calc_fib, two_num_calc_fib};
+pub use dp::grid_travel_tab::calc_paths;
+pub use dp::can_sum_tab::can_sum_tab;
+pub use dp::how_sum_tab::how_sum_tab;
+pub use dp::best_sum_tab::best_sum_tab;
+pub use dp::can_construct_tab::can_construct_tab;
+pub use dp::count_construct_tab::count_construct_tab;
+pub use dp::all_construct_tab::all_construct;
