@@ -1,15 +1,7 @@
-// [
-// a    Some([])
-// b    None,
-// c    Some([["ab"]]),
-// d    Some([["abc"]]),
-// e    Some([["abcd"], ["ab", "cd"]]),
-// f    None
-// ''   None
-// ]
 
 use std::borrow::Borrow;
 use std::vec;
+use std::mem;
 use std::cell::RefCell;
 
 type OptionVector = Option<Vec<Vec<&'static str>>>;
@@ -24,13 +16,13 @@ pub fn all_construct(target: &'static str, wordbank: &Vec<&'static str>) -> Opti
 
     // println!("checking: {}, table[{}]={:?}", &target[i..], &i, &table[i]);
 
-    if cell_source_vector.is_some() {
+    if (*cell_source_vector).is_some() {
       let current_prefix = &target[i..];
       println!("outer {}", &current_prefix);
   
       for &word in wordbank {
         if current_prefix.starts_with(word) {
-          let mut new_vec = (*cell_source_vector.borrow()).clone().unwrap();
+          let mut new_vec = (*cell_source_vector).clone().unwrap();
 
           if new_vec.len() < 1 {
             new_vec.insert(0, vec![word]);
@@ -43,17 +35,20 @@ pub fn all_construct(target: &'static str, wordbank: &Vec<&'static str>) -> Opti
 
           // println!("Word match={}, Forward vec: {:?}, forward_vec.is_some()={}, New Vec: {:?}", &word, &forward_vec, forward_vec.is_some(), &new_vec);
           
-          if forward_vec.is_some() {
+          if (*forward_vec).is_some() {
             let mut value = (*forward_vec.borrow()).clone().unwrap();
             value.extend(new_vec);
             forward_vec.replace(value);
           } else {
             forward_vec.replace(new_vec);
           }
-          
         }
       }
     }
+
+    mem::drop(cell_source_vector);
+    let old_vec = ref_cell.replace(None);
+    mem::drop(old_vec);
   });
 
   // println!("Table {:#?}", &table);
@@ -93,7 +88,7 @@ mod tests {
 
   #[test]
   fn can_construct_all_0_large_string() {
-    let all_construct_results = all_construct("aaaaaaaaaaaaaz", &vec!["a", "aa", "aaa", "aaaa", "aaaaa"]);
+    let all_construct_results = all_construct("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz", &vec!["a", "aa", "aaa", "aaaa", "aaaaa"]);
     assert!(all_construct_results == None);
   }
 }
