@@ -1,15 +1,15 @@
 pub fn calc_paths(m: usize, n: usize) -> usize {
-  let mut paths = vec![vec![0; n+1]; m+1];
+  let mut paths = vec![vec![0; n + 1]; m + 1];
 
   paths[1][1] = 1;
 
   (0..=m).for_each(|r| {
     (0..=n).for_each(|c| {
       if r + 1 <= m {
-        paths[r+1][c] = paths[r+1][c] + paths[r][c];
+        paths[r + 1][c] = paths[r + 1][c] + paths[r][c];
       }
       if c + 1 <= n {
-        paths[r][c+1] = paths[r][c+1] + paths[r][c];
+        paths[r][c + 1] = paths[r][c + 1] + paths[r][c];
       }
     });
   });

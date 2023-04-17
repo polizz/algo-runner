@@ -2,7 +2,11 @@ use std::collections::HashMap;
 
 type Memo = HashMap<&'static str, Option<Vec<Vec<&'static str>>>>;
 
-fn do_all_construct(target: &'static str, wordbank: &Vec<&'static str>, memo: &mut Memo) -> Option<Vec<Vec<&'static str>>> {
+fn do_all_construct(
+  target: &'static str,
+  wordbank: &Vec<&'static str>,
+  memo: &mut Memo,
+) -> Option<Vec<Vec<&'static str>>> {
   if memo.contains_key(target) {
     return memo.get(&target).unwrap().clone();
   }
@@ -45,8 +49,17 @@ mod tests {
 
   #[test]
   fn can_construct_all_1_small_string() {
-    let all_construct_results = can_all_construct("abcdef", vec!["ab", "abc", "cd", "def", "abcd", "ef", "c"]);
-    assert!(all_construct_results == Some(vec![vec!["ab", "cd", "ef"], vec!["ab", "c", "def"], vec!["abc", "def"], vec!["abcd", "ef"]]));
+    let all_construct_results =
+      can_all_construct("abcdef", vec!["ab", "abc", "cd", "def", "abcd", "ef", "c"]);
+    assert!(
+      all_construct_results
+        == Some(vec![
+          vec!["ab", "cd", "ef"],
+          vec!["ab", "c", "def"],
+          vec!["abc", "def"],
+          vec!["abcd", "ef"]
+        ])
+    );
   }
 
   #[test]
@@ -58,13 +71,19 @@ mod tests {
 
   #[test]
   fn can_construct_all_0_small_string() {
-    let all_construct_results = can_all_construct("skateboard", vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"]);
-    assert!(all_construct_results  == Some(vec![]));
+    let all_construct_results = can_all_construct(
+      "skateboard",
+      vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"],
+    );
+    assert!(all_construct_results == Some(vec![]));
   }
 
   #[test]
   fn can_construct_all_0_large_string() {
-    let all_construct_results = can_all_construct("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz", vec!["a", "aa", "aaa", "aaaa", "aaaaa"]);
+    let all_construct_results = can_all_construct(
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz",
+      vec!["a", "aa", "aaa", "aaaa", "aaaaa"],
+    );
     assert!(all_construct_results == Some(vec![]));
   }
 }

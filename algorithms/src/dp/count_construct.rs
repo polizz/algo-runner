@@ -8,7 +8,7 @@ fn do_count_construct(target: &'static str, wordbank: &Vec<&str>, memo: &mut Mem
   }
 
   if target == "" {
-    return 1; 
+    return 1;
   }
 
   let mut branch_counts = 0;
@@ -50,13 +50,19 @@ mod tests {
 
   #[test]
   fn can_construct_count_0_small_string() {
-    let can_construct_count = can_construct_count("skateboard", vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"]);
-    assert!(can_construct_count  == 0);
+    let can_construct_count = can_construct_count(
+      "skateboard",
+      vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"],
+    );
+    assert!(can_construct_count == 0);
   }
 
   #[test]
   fn can_construct_count_0_large_string() {
-    let can_construct_count = can_construct_count("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef", vec!["e", "ee", "eee", "eeee", "eeeeee"]);
+    let can_construct_count = can_construct_count(
+      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef",
+      vec!["e", "ee", "eee", "eeee", "eeeeee"],
+    );
     assert!(can_construct_count == 0);
   }
 }

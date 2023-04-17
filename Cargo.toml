@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 argh = "0.1.7"
 algorithms = { path = "./algorithms" }
+data_structures = { path = "./data_structures" }
 
 [workspace]
 members = [
   "algorithms",
+  "data_structures"
 ]

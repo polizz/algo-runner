@@ -1,8 +1,7 @@
-
 use std::borrow::Borrow;
-use std::vec;
-use std::mem;
 use std::cell::RefCell;
+use std::mem;
+use std::vec;
 
 type OptionVector = Option<Vec<Vec<&'static str>>>;
 
@@ -19,7 +18,7 @@ pub fn all_construct(target: &'static str, wordbank: &Vec<&'static str>) -> Opti
     if (*cell_source_vector).is_some() {
       let current_prefix = &target[i..];
       println!("outer {}", &current_prefix);
-  
+
       for &word in wordbank {
         if current_prefix.starts_with(word) {
           let mut new_vec = (*cell_source_vector).clone().unwrap();
@@ -27,14 +26,16 @@ pub fn all_construct(target: &'static str, wordbank: &Vec<&'static str>) -> Opti
           if new_vec.len() < 1 {
             new_vec.insert(0, vec![word]);
           } else {
-            new_vec.iter_mut().for_each(|vecs| vecs.insert(vecs.len(), word));
+            new_vec
+              .iter_mut()
+              .for_each(|vecs| vecs.insert(vecs.len(), word));
           }
 
           let forward_ref_cell = &table[i + word.len()];
           let mut forward_vec = forward_ref_cell.borrow_mut();
 
           // println!("Word match={}, Forward vec: {:?}, forward_vec.is_some()={}, New Vec: {:?}", &word, &forward_vec, forward_vec.is_some(), &new_vec);
-          
+
           if (*forward_vec).is_some() {
             let mut value = (*forward_vec.borrow()).clone().unwrap();
             value.extend(new_vec);
@@ -60,11 +61,20 @@ pub fn all_construct(target: &'static str, wordbank: &Vec<&'static str>) -> Opti
 #[cfg(test)]
 mod tests {
   use super::*;
-  
+
   #[test]
   fn can_construct_all_1_small_string() {
-    let all_construct_results = all_construct("abcdef", &vec!["ab", "abc", "cd", "def", "abcd", "ef", "c"]);
-    assert!(all_construct_results == Some(vec![ vec!["abc", "def"], vec!["ab", "c", "def"], vec!["abcd", "ef"], vec!["ab", "cd", "ef"] ]));
+    let all_construct_results =
+      all_construct("abcdef", &vec!["ab", "abc", "cd", "def", "abcd", "ef", "c"]);
+    assert!(
+      all_construct_results
+        == Some(vec![
+          vec!["abc", "def"],
+          vec!["ab", "c", "def"],
+          vec!["abcd", "ef"],
+          vec!["ab", "cd", "ef"]
+        ])
+    );
   }
 
   #[test]
@@ -77,18 +87,24 @@ mod tests {
   fn can_construct_all_2_small_string() {
     let all_construct_results = all_construct("purple", &vec!["purp", "p", "ur", "le", "purpl"]);
     println!("OUT {:?}", all_construct_results);
-    assert!(all_construct_results == Some(vec![ vec!["purp", "le"], vec!["p", "ur", "p", "le"] ] ));
+    assert!(all_construct_results == Some(vec![vec!["purp", "le"], vec!["p", "ur", "p", "le"]]));
   }
 
   #[test]
   fn can_construct_all_0_small_string() {
-    let all_construct_results = all_construct("skateboard", &vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"]);
-    assert!(all_construct_results  == None);
+    let all_construct_results = all_construct(
+      "skateboard",
+      &vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"],
+    );
+    assert!(all_construct_results == None);
   }
 
   #[test]
   fn can_construct_all_0_large_string() {
-    let all_construct_results = all_construct("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz", &vec!["a", "aa", "aaa", "aaaa", "aaaaa"]);
+    let all_construct_results = all_construct(
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz",
+      &vec!["a", "aa", "aaa", "aaaa", "aaaaa"],
+    );
     assert!(all_construct_results == None);
   }
 }

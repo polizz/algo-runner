@@ -14,7 +14,7 @@ pub fn can_construct_tab(target: &'static str, wordbank: &Vec<&str>) -> bool {
     if table[i] {
       let current_prefix = &target[i..];
       // println!("outer {}", &current_prefix);
-  
+
       for &word in wordbank {
         if current_prefix.starts_with(word) {
           table[i + word.len()] = true;
@@ -22,7 +22,7 @@ pub fn can_construct_tab(target: &'static str, wordbank: &Vec<&str>) -> bool {
       }
     }
   });
-  
+
   println!("table: {:#?}", &table);
   return table[target.len()];
 }
@@ -39,12 +39,18 @@ mod tests {
 
   #[test]
   fn cannot_construct_string() {
-    let can_construct = can_construct_tab("skateboard", &vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"]);
+    let can_construct = can_construct_tab(
+      "skateboard",
+      &vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"],
+    );
     assert!(!can_construct);
   }
   #[test]
   fn can_construct_large_string() {
-    let can_construct = can_construct_tab("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef", &vec!["e", "ee", "eee", "eeee", "eeeeee"]);
+    let can_construct = can_construct_tab(
+      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef",
+      &vec!["e", "ee", "eee", "eeee", "eeeeee"],
+    );
     assert!(!can_construct);
   }
 }

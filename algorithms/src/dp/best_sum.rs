@@ -7,7 +7,7 @@ fn do_best_sum(target: i32, nums: &Vec<i32>, memo: &mut Memo) -> Option<Vec<i32>
     return memo.get(&target).unwrap().clone();
   }
 
-  let mut shortest_combination: Option<Vec<i32>> = None ;
+  let mut shortest_combination: Option<Vec<i32>> = None;
 
   if target < 0 {
     return None;
@@ -22,14 +22,14 @@ fn do_best_sum(target: i32, nums: &Vec<i32>, memo: &mut Memo) -> Option<Vec<i32>
 
     if let Some(mut vec) = do_best_sum(remainder, &nums, memo) {
       vec.push(num);
-      
+
       let short_clone = shortest_combination.clone();
       if short_clone.is_none() || vec.len() < short_clone.unwrap().len() {
         shortest_combination = Some(vec);
       }
     }
   }
-  
+
   memo.insert(target.clone(), shortest_combination);
   return memo.get(&target).unwrap().clone();
 }

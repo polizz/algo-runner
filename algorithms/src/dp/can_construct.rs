@@ -22,7 +22,7 @@ fn do_can_construct(target: &'static str, wordbank: &Vec<&str>, memo: &mut Memo)
       }
     }
   }
-  
+
   let false_string = target.clone();
   memo.insert(false_string, false);
   return false;
@@ -45,12 +45,18 @@ mod tests {
 
   #[test]
   fn cannot_construct_string() {
-    let can_construct = can_construct("skateboard", vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"]);
+    let can_construct = can_construct(
+      "skateboard",
+      vec!["bo", "rd", "ate", "t", "ska", "sk", "boar"],
+    );
     assert!(!can_construct);
   }
   #[test]
   fn can_construct_large_string() {
-    let can_construct = can_construct("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef", vec!["e", "ee", "eee", "eeee", "eeeeee"]);
+    let can_construct = can_construct(
+      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef",
+      vec!["e", "ee", "eee", "eeee", "eeeeee"],
+    );
     assert!(!can_construct);
   }
 }

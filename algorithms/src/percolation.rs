@@ -10,7 +10,7 @@ pub struct Percolator {
 
 impl Percolator {
   pub fn new(n: usize) -> Self {
-    let num_sites = usize::pow(n, 2) ;
+    let num_sites = usize::pow(n, 2);
     let mut open_sites = vec![false; num_sites + 2]; // +2 sites for virtual top and bottom site
     let union_find = UF::new(num_sites + 2);
 
@@ -18,7 +18,7 @@ impl Percolator {
 
     open_sites[0] = true;
     open_sites[num_sites + 1] = true;
-    
+
     Percolator {
       open_sites,
       union_find,
@@ -38,7 +38,7 @@ impl Percolator {
   }
 
   pub fn is_open(&self, site: usize) -> bool {
-    self.open_sites[site] 
+    self.open_sites[site]
   }
 
   pub fn is_full(&mut self, site: usize) -> bool {
@@ -46,9 +46,12 @@ impl Percolator {
   }
 
   pub fn number_of_open_sites(&self) -> usize {
-    self.open_sites.iter()
+    self
+      .open_sites
+      .iter()
       .filter(|&&site_open| true == site_open)
-      .count() - 2
+      .count()
+      - 2
   }
 
   pub fn percolates(&mut self) -> bool {
@@ -82,21 +85,19 @@ impl Percolator {
 
       if self.open_sites[behind] {
         self.union_find.union(site, behind);
-      }    
+      }
     }
 
     let ahead = site + 1;
     if ahead <= bottom_virt_site {
       if self.open_sites[ahead] {
-          self.union_find.union(site, ahead);
+        self.union_find.union(site, ahead);
       }
     } else {
       self.union_find.union(site, bottom_virt_site);
     }
 
-    if site >= num_sites {
-
-    }
+    if site >= num_sites {}
     let down = site + n;
     if down <= bottom_virt_site {
       if self.open_sites[down] {
@@ -139,7 +140,7 @@ mod tests {
   }
 
   #[test]
-  fn open_site_count_correct(){
+  fn open_site_count_correct() {
     let mut perc = Percolator::new(4);
     let perc_ref = &mut perc;
 
@@ -227,7 +228,9 @@ mod tests {
   #[test]
   fn can_init() {
     let expected: Vec<usize> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let expected_open = vec![true, false, false, false, false, false, false, false, false, false, true];
+    let expected_open = vec![
+      true, false, false, false, false, false, false, false, false, false, true,
+    ];
     let perc = Percolator::new(3);
 
     let sites = &perc.union_find.sites;

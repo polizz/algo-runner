@@ -4,16 +4,15 @@ pub fn can_sum_tab(target: usize, numbers: Vec<i32>) -> bool {
   tab[0] = true;
 
   (0..=target).for_each(|i| {
-    (0..numbers.len())
-      .for_each(|j| {
-        if tab[i] {
-          let forward_num = numbers[j];
+    (0..numbers.len()).for_each(|j| {
+      if tab[i] {
+        let forward_num = numbers[j];
 
-          if i + forward_num as usize <= target {
-            tab[i + forward_num as usize] = true;
-          }
+        if i + forward_num as usize <= target {
+          tab[i + forward_num as usize] = true;
         }
-      })
+      }
+    })
   });
 
   // println!("{:#?}", &tab);

@@ -21,7 +21,7 @@ fn do_how_sum(target: i32, nums: &Vec<i32>, memo: &mut Memo) -> Option<Vec<i32>>
     if let Some(mut vec) = do_how_sum(remainder, &nums, memo) {
       vec.push(num.clone());
       memo.insert(target.clone(), Some(vec));
-      
+
       return memo.get(&target).unwrap().clone();
     }
   }
