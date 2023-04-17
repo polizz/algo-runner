@@ -4,9 +4,10 @@ use std::fs::File;
 use std::fmt::{Debug, Display};
 use std::io::prelude::*;
 use std::path::PathBuf;
+use std::str;
 use std::string::String;
 
-const BUFF_SZ: usize = 1024;
+const FILE_BUFF_SZ: usize = 4096;
 const R: usize = 5381;
 
 // type K = String;
@@ -36,11 +37,9 @@ impl Hashable for String {
 pub fn get_words_from_file(word_file_path: PathBuf) -> String {
   let mut word_file = File::open(word_file_path).expect("Input file was not found");
 
-  let mut file_buffer = [0u8; BUFF_SZ];
-  let mut read_buffer = [0u8; 4096];
-
+  let mut file_buffer = [0u8; FILE_BUFF_SZ];
   let mut read_bytes;
-  let mut total_bytes = 0;
+  let mut str_repr: String = String::from("");
 
   loop {
     read_bytes = word_file.read(&mut file_buffer).expect("whoa");
@@ -49,17 +48,14 @@ pub fn get_words_from_file(word_file_path: PathBuf) -> String {
       break;
     }
 
-    read_buffer[total_bytes..(total_bytes + read_bytes)]
-      .copy_from_slice(&file_buffer[..read_bytes]);
-    total_bytes += read_bytes;
+    let trim_bytes = file_buffer
+      .into_iter()
+      .filter(|&b| b > 0)
+      .collect::<Vec<u8>>();
+
+    let str_slice = trim_bytes.as_slice();
+    str_repr.push_str(str::from_utf8(str_slice).unwrap());
   }
-
-  let trim_bytes = read_buffer
-    .into_iter()
-    .filter(|&b| b > 0)
-    .collect::<Vec<u8>>();
-
-  let str_repr = String::from_utf8(trim_bytes).expect("Not a valid UTF-8 string");
 
   str_repr
 }
@@ -73,7 +69,7 @@ pub struct HashTableLinear<K, V> {
 
 impl<K, V> HashTableLinear<K, V>
 where
-  K: Clone + Hashable + Display + PartialEq,
+  K: Clone + Hashable + Display + PartialEq + Debug,
   V: Clone + Display + Debug,
 {
   pub fn put(&mut self, key: K, value: V) {
@@ -83,16 +79,20 @@ where
     if let Some(ekey) = existing_key {
       if key != *ekey {
         // collision
-        let search_range = self.get_probe_range(assign_idx);
-        let next_bucket = search_range
-          .into_iter()
-          .find(|&test_idx| match self.keys[test_idx] {
-            Some(_) => false,
-            None => true,
-          })
-          .unwrap();
+        let next_bucket = self.get_probe_range(assign_idx, |&test_idx| match self.keys[test_idx] {
+          Some(_) => false,
+          None => true,
+        });
 
-        assign_idx = next_bucket;
+        assign_idx = next_bucket.unwrap_or_else(|| {
+          println!(
+            "Collision not resolved for new key {:?}. Existing key: {:?} at index {:?}",
+            &key, &existing_key.as_ref().unwrap(), &assign_idx
+          );
+
+          panic!("Collision not resolved for new key {:?}. Existing key: {:?} at index {:?}",
+           &key, &existing_key.as_ref().unwrap(), &assign_idx);
+        });
       }
     }
 
@@ -100,23 +100,21 @@ where
     self.values[assign_idx] = Some(value);
   }
 
-  pub fn get(&self, key: K) -> &Option<V> {
+  pub fn get(&self, key: &K) -> &Option<V> {
     let mut idx = key.get_hash(self.m);
     let existing_key = &self.keys[idx];
 
     match existing_key {
       Some(key_found) => {
-        if key_found != &key {
-          let search_range = self.get_probe_range(idx);
-          let next_bucket = search_range
-            .into_iter()
-            .find(|&test_idx| match &self.keys[test_idx] {
-              Some(test_key) => *test_key == key,
-              None => false,
-            });
+        if key_found != key {
+          let next_bucket = self.get_probe_range(idx, |&test_idx| match &self.keys[test_idx] {
+            Some(test_key) => test_key == key,
+            None => false,
+          });
 
           if let Some(next_idx) = next_bucket {
-            idx = next_idx
+            idx = next_idx;
+            println!("Resolved collision key: {}", &key);
           } else {
             return &None;
           };
@@ -127,15 +125,19 @@ where
     }
   }
 
-  fn get_probe_range(&self, start_idx: usize) -> Vec<usize> {
+  fn get_probe_range(
+    &self,
+    start_idx: usize,
+    local_filter: impl FnMut(&usize) -> bool,
+  ) -> Option<usize> {
     if start_idx == self.keys.len() - 1 || start_idx == 0 {
       (0..(self.keys.len() - 1))
         .filter(|&n| n != start_idx)
-        .collect()
+        .find(local_filter)
     } else {
       (start_idx + 1..self.keys.len() - 1)
         .chain(0..start_idx - 1)
-        .collect()
+        .find(local_filter)
     }
   }
 
@@ -145,14 +147,6 @@ where
       keys: vec![None; m],
       values: vec![None; m],
     }
-  }
-
-  fn keys(&self) -> &Vec<Option<K>> {
-    &self.keys
-  }
-
-  fn values(&self) -> &Vec<Option<V>> {
-    &self.values
   }
 }
 
@@ -180,9 +174,9 @@ mod tests {
     // println!("{:#?}", &ht);
     // println!("Hash: {}", "two".get_hash(3));
 
-    assert_eq!(ht.get("a billion"), &Some(1));
-    assert_eq!(ht.get(" "), &Some(0));
-    assert_eq!(ht.get("two"), &Some(1000));
+    assert_eq!(ht.get(&"a billion"), &Some(1));
+    assert_eq!(ht.get(&" "), &Some(0));
+    assert_eq!(ht.get(&"two"), &Some(1000));
   }
 
   #[test]
@@ -192,8 +186,8 @@ mod tests {
     ht.put(" ", 0);
     ht.put("a billion", 1);
 
-    assert_eq!(*ht.get("a billion"), Some(1));
-    assert_eq!(*ht.get(" "), Some(0));
+    assert_eq!(*ht.get(&"a billion"), Some(1));
+    assert_eq!(*ht.get(&" "), Some(0));
 
     // println!("{:#?}", &ht);
   }
@@ -231,14 +225,14 @@ mod tests {
 
     // println!("HT: {:?}", &ht);
 
-    assert_eq!(ht.keys()[3], Some(" "));
-    assert_eq!(ht.values()[3], Some(0));
+    assert_eq!(ht.keys[3], Some(" "));
+    assert_eq!(ht.values[3], Some(0));
 
-    assert_eq!(ht.keys()[4], Some("a billion"));
-    assert_eq!(ht.values()[4], Some(1));
+    assert_eq!(ht.keys[4], Some("a billion"));
+    assert_eq!(ht.values[4], Some(1));
 
-    assert_eq!(ht.keys().len(), 31);
-    assert_eq!(ht.values().len(), 31);
+    assert_eq!(ht.keys.len(), 31);
+    assert_eq!(ht.values.len(), 31);
   }
 
   #[test]
@@ -253,12 +247,32 @@ seven
 8 nine
 ";
 
-    // println!("Directory starting with: {}", &path.display());
     path.push("fixtures/words.txt");
-    // println!("Directory used: {}", &path.display());
-
     let _words = get_words_from_file(path);
 
     assert_eq!(_words, expected_words);
+  }
+
+  #[test]
+  #[ignore]
+  fn can_read_large_word_file() {
+    let mut path = std::env::current_dir().expect("whoa");
+
+    // println!("Directory starting with: {}", &path.display());
+    path.push("fixtures/sentences.txt");
+    // println!("Directory used: {}", &path.display());
+
+    let words = get_words_from_file(path);
+
+    let words: Vec<&str> = words.split_ascii_whitespace().collect();
+    let mut ht: HashTableLinear<&str, usize> = HashTableLinear::new(5731);
+
+    words.iter().enumerate().for_each(|(ix, val)| {
+      ht.put(val.clone(), ix);
+    });
+
+    // println!("HT: {:#?}", &ht);
+
+    // assert_eq!(_words, expected_words);
   }
 }

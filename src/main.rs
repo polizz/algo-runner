@@ -33,5 +33,13 @@ fn main() {
     words.iter().enumerate().for_each(|(ix, val)| {
       ht.put(val.clone(), ix);
     });
+
+    words.iter().for_each(|val| {
+      ht.get(val);
+    });
+
+    // words.iter().for_each(|val| {
+    //   ht.del(val);
+    // });
   }
 }
