@@ -1,7 +1,7 @@
 use argh::FromArgs;
 
 fn default_hashtable_num_buckets() -> usize {
-  100
+  179
 }
 
 #[derive(FromArgs, Debug)]
