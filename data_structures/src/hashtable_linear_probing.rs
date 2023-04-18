@@ -42,7 +42,7 @@ pub struct HashTableLinear<K, V> {
 impl<K, V> HashTableLinear<K, V>
 where
   K: Clone + Hashable + Display + PartialEq + Debug,
-  V: Clone + Display + Debug,
+  V: Clone + Display + Debug
 {
   pub fn new(m: usize) -> Self {
     HashTableLinear {
@@ -57,12 +57,20 @@ where
     let existing_key = &self.keys[assign_idx];
 
     if let Some(ekey) = existing_key {
-      if key != *ekey {
+      // if "country" == *ekey {
+      //   println!("Idx for country: {:?}", &assign_idx);
+      // }
+
+      if &key != ekey {
         // collision
-        let next_bucket = self.get_probe_range(assign_idx, |&test_idx| match self.keys[test_idx] {
-          Some(_) => false,
+        // println!("Collision between {:?} and {:?}, probing start: {:?}", &key, &ekey, &assign_idx);
+
+        let next_bucket = self.get_probe_idx(assign_idx, |&test_idx| match &self.keys[test_idx] {
+          Some(following_word) => following_word == &key,
           None => true,
         });
+
+        // println!("Probe idx {:?}", &next_bucket.unwrap());
         
         assign_idx = next_bucket.unwrap_or_else(|| {
           panic!(
@@ -83,17 +91,19 @@ where
     let mut idx = key.get_hash(self.m);
     let existing_key = &self.keys[idx];
 
+    // println!("Get key: {:?}, idx: {:?}", &key, &idx);
+
     match existing_key {
       Some(key_found) => {
         if key_found != key {
-          let next_bucket = self.get_probe_range(idx, |&test_idx| match &self.keys[test_idx] {
+          let next_bucket = self.get_probe_idx(idx, |&test_idx| match &self.keys[test_idx] {
             Some(test_key) => test_key == key,
             None => false,
           });
 
           if let Some(next_idx) = next_bucket {
             idx = next_idx;
-            println!("Successful (get) probe for key: {}", &key);
+            // println!("Successful (get) probe for key: {}", &key);
           } else {
             return &None;
           };
@@ -109,6 +119,7 @@ where
     let deleted_val = self.values[idx].clone().unwrap();
     self.keys[idx] = None;
     self.values[idx] = None;
+
     // let deleted_val = self.values[idx].replace(Some("a")).unwrap();
 
     // let rehash_key_indexes = self.keys.iter()
@@ -122,18 +133,23 @@ where
     let mut rehash_values= Vec::new();
 
 
-    println!("Redo range: {:#?}", &redo_range);
+    // println!("Redo range: {:#?}, vec len: {:?}", &redo_range, &self.keys.len());
 
     redo_range
       .iter()
-      .for_each(|&idx| {
-        rehash_keys.push(self.keys.remove(idx));
-        rehash_values.push(self.values.remove(idx));
+      .for_each(|&r_idx| {
+        rehash_keys.push(self.keys[r_idx].take());
+        self.keys[r_idx] = None;
+
+        rehash_values.push(self.values[r_idx].take());
+        self.values[r_idx] = None;
       });
+
+    // println!("Rehash keys: {:?}", &rehash_keys);
 
     zip(rehash_keys, rehash_values)
       .for_each(|(k, v)| {
-        println!("ZIP: K={:#?} V={:#?}", &k, &v);
+        // println!("ZIP: K={:#?} V={:#?}", &k, &v);
         self.put(k.unwrap(), v.unwrap())
       });
 
@@ -144,27 +160,24 @@ where
     let idx = key.get_hash(self.m);
     let existing_key = &self.keys[idx];
 
-    println!("Key: {:?} Existing Key: {:#?} Idx: {:#?}", &key, &existing_key, &idx);
+    // println!("Key: {:?} Existing Key: {:#?} Idx: {:#?}", &key, &existing_key, &idx);
 
     match existing_key {
       Some(key_found) => {
         if key_found != key {
-          println!("Keys don't match...");
-
-          let del_idx = self.get_probe_range(idx, |&test_idx| match &self.keys[test_idx] {
+          let del_idx = self.get_probe_idx(idx, |&test_idx| match &self.keys[test_idx] {
             Some(test_key) => test_key == key,
             None => false,
           });
 
-          
           if let Some(new_idx) = del_idx {
-            println!("Successful (del) probe for key: {} at idx: {}", &key, &new_idx);
+            // println!("Successful (del) probe for key: {} at idx: {}", &key, &new_idx);
             let redo_range: Vec<usize> = self.get_redo_range(new_idx);
             
             // probe found key, delete it and re-add everything below it up to the first None
             Some(self.delete_idx(new_idx, redo_range))
           } else {
-            println!("Probe on del not successful");
+            // println!("Probe did not find key");
             None
           }
         } else {
@@ -177,20 +190,30 @@ where
     }
   }
 
+  pub fn keys(&self) -> &Vec<Option<K>>{
+    &self.keys
+  }
+
+  pub fn values(&self) -> &Vec<Option<V>>{
+    &self.values
+  }
+
   fn get_redo_range(&self, del_idx: usize) -> Vec<usize> {
+    // println!("get_redo_range del_idx: {:?}", &del_idx);
+    
     if del_idx == self.keys.len() - 1 || del_idx == 0 {
       (0..(self.keys.len() - 1))
         .take_while(|&n| n != del_idx && self.keys[n].is_some())
         .collect()
     } else {
-      (del_idx + 1..self.keys.len() - 1)
+      ((del_idx + 1)..(self.keys.len() - 1))
         .chain(0..del_idx - 1)
         .take_while(|&n| self.keys[n].is_some())
         .collect()
     }
   }
 
-  fn get_probe_range(
+  fn get_probe_idx(
     &self,
     start_idx: usize,
     local_filter: impl FnMut(&usize) -> bool,

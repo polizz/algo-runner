@@ -34,12 +34,18 @@ fn main() {
       ht.put(val.clone(), ix);
     });
 
+    // println!("HT: {:?}", &ht.keys());
+    // println!("Unique words: {:?}", &ht.keys().iter().filter(|w| w.is_some()).count());
+
+    // words.iter().take(1).for_each(|val| {
+    //   ht.get(val);
+    // });
     words.iter().for_each(|val| {
       ht.get(val);
     });
 
-    // words.iter().for_each(|val| {
-    //   ht.del(val);
-    // });
+    words.iter().for_each(|val| {
+      ht.delete(val);
+    });
   }
 }
