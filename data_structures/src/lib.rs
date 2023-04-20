@@ -1,6 +1,8 @@
-mod hashtable_linear_probing;
+mod hashtable;
+mod bst;
 
-pub use hashtable_linear_probing::*;
+pub use hashtable::*;
+pub use bst::*;
 
 // #[cfg(test)]
 // mod tests {
