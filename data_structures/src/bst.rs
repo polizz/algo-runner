@@ -43,13 +43,14 @@ where
       root: None
     }
   }
-
+  
   pub fn put(&mut self, key: K, value: V) {
-    let mut node = BST::put_recurse(self.root.take(), key, value);
+    let root = self.root.take();
+    let mut node = self.put_descend(root, key, value);
     self.root = node.take();
   }
 
-  fn put_recurse(mut h: Link<K, V>, key: K, value: V) -> Link<K, V> {
+  fn put_descend(&self, mut h: Link<K, V>, key: K, value: V) -> Link<K, V> {
     match h {
       None => Some(Box::new(Node {
         key,
@@ -63,9 +64,9 @@ where
         let h_node: &mut Node<K, V> = h_next.borrow_mut();
         
         if key > h_node.key {
-          h_node.right = BST::put_recurse(h_node.right.take(), key, value);
+          h_node.right = self.put_descend(h_node.right.take(), key, value);
         } else if key < h_node.key {
-          h_node.left = BST::put_recurse(h_node.left.take(), key, value);
+          h_node.left = self.put_descend(h_node.left.take(), key, value);
         } else {
           h_node.value = value;
         }
