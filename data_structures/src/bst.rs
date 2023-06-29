@@ -123,8 +123,12 @@ where
 
         h_node.count = 1 + BST::size_tree(&h_node.left) + BST::size_tree(&h_node.right);
 
-        BST::balance(h_next);
+        drop(h_node);
+
+        // h = BST::balance(mem::take(h_next));
         
+        println!("after Balance: {:?}", &h);
+
         h
       }
     }
@@ -158,67 +162,91 @@ where
     h.left.as_mut().unwrap().color = Color::Black;
   }
 
-  fn balance(node: &mut Box<Node<K, V>>) {
+  /*
+  fn balance(h: Node<K, V>) -> Link<K, V> {
     // let h = node;
-    let mut h: &mut Node<K, V> = node.borrow_mut();
+    // let mut h: &mut Node<K, V> = node.borrow_mut();
+
+    println!("Balancing: {:?}", &h);
+
+    let mut node_rotate = Link::default();
 
     if (h.right.is_some() && BST::is_red(&h.right)) && (h.left.is_none() || h.left.is_some() && !BST::is_red(&h.left)) {
       println!("rotating left");
-      BST::rotate_left(&mut h);
+      node_rotate = BST::rotate_left(h);
     }
-    if (h.left.is_some() && BST::is_red(&h.left)) && (h.left.is_some() && (&h.left).as_ref().unwrap().left.is_some() && !BST::is_red(&h.left.as_mut().unwrap().left)) {
+    let h_r = *(&node_rotate.as_ref().unwrap());
+    if ((&h_r.left).is_some() && BST::is_red(&h_r.left)) && (h_r.left.is_some() && (&h_r.left).as_ref().unwrap().left.is_some() && !BST::is_red(&h_r.left.unwrap().left)) {
       println!("rotating right");
-      BST::rotate_right(&mut h);
+      BST::rotate_right(**h_r);
     }
-    if (h.left.is_some() && BST::is_red(&h.left)) && (h.right.is_some() && !BST::is_red(&h.right)) {
-      println!("flipping colors");
-      BST::flip_colors(&mut h);
-    }
+    // if (h.left.is_some() && BST::is_red(&h.left)) && (h.right.is_some() && !BST::is_red(&h.right)) {
+    //   println!("flipping colors");
+    //   BST::flip_colors(h);
+    // }
 
     // h
+    // node_rotate
+    Link::default()
   }
-
-  pub fn rotate_left(h: &mut Node<K, V>) -> Node<K, V> {
+  */
+  pub fn rotate_left(mut h: Node<K, V>) -> Link<K, V> {
     // H is above X and is < X. X is on H's right.
     // They will switch places and X.
     // being < H, will be above H and X will be on H's left.
 
     let x_moved = mem::replace(&mut h.right, None);
-    let mut h_moved = mem::replace(h, Node::default());
+    // let mut h_moved = mem::replace(h, Node::default());
 
     let mut x_u = *(x_moved.unwrap());
+    println!("BEFORE h: {:?}, x: {:?}", &h, &x_u);
+    
+    h.right = mem::replace(&mut x_u.left, None);
+    x_u.count = h.count;
+    h.count = 1 + BST::size_tree(&h.left) + BST::size_tree(&h.right);
+    
+    x_u.color = h.color;
+    h.color = Color::Red;
 
-    h_moved.right = mem::replace(&mut x_u.left, None);
-    x_u.count = h_moved.count;
-    h_moved.count = 1 + BST::size_tree(&h_moved.left) + BST::size_tree(&h_moved.right);
-
-    x_u.color = h_moved.color;
-    h_moved.color = Color::Red;
-
-    // mem::replace(&mut x_u.left, Some(h_moved));
-    *h = h_moved;
-    // *x = x
-
-    x_u
+    mem::swap(&mut x_u.left, &mut Some(Box::new(h)));
+    
+    Some(Box::new(x_u))
   }
 
-  pub fn rotate_right(h: &mut Node<K, V>) -> Node<K, V> {
-    let x_moved = mem::replace(&mut h.left, None);
-    let mut h_moved = mem::replace(h, Node::default());
+  pub fn rotate_right(mut h: Node<K, V>) -> Link<K, V> {
+    let x_moved = mem::replace(&mut h.right, None);
+    // let mut h_moved = mem::replace(h, Node::default());
 
     let mut x_u = *(x_moved.unwrap());
+    println!("BEFORE h: {:?}, x: {:?}", &h, &x_u);
+    
+    h.left = mem::replace(&mut x_u.right, None);
+    x_u.count = h.count;
+    h.count = 1 + BST::size_tree(&h.left) + BST::size_tree(&h.right);
+    
+    x_u.color = h.color;
+    h.color = Color::Red;
 
-    h_moved.left = mem::replace(&mut x_u.right, None);
-    x_u.count = h_moved.count;
-    h_moved.count = 1 + BST::size_tree(&h_moved.left) + BST::size_tree(&h_moved.right);
+    mem::swap(&mut x_u.right, &mut Some(Box::new(h)));
+    
+    Some(Box::new(x_u))
 
-    x_u.color = h_moved.color;
-    h_moved.color = Color::Red;
+    // let x_moved = mem::replace(&mut h.left, None);
+    // let mut h_moved = mem::replace(h, Node::default());
 
-    // mem::replace(&mut x_u.right, Some(h_moved));
+    // let mut x_u = *(x_moved.unwrap());
 
-    *h = h_moved;
-    x_u
+    // h_moved.left = mem::replace(&mut x_u.right, None);
+    // x_u.count = h_moved.count;
+    // h_moved.count = 1 + BST::size_tree(&h_moved.left) + BST::size_tree(&h_moved.right);
+
+    // x_u.color = h_moved.color;
+    // h_moved.color = Color::Red;
+
+    // // mem::replace(&mut x_u.right, Some(h_moved));
+
+    // *h = h_moved;
+    // x_u
   }
   // isRed(Node) -> bool
   // rotateLeft(Node) -> Node
@@ -245,10 +273,11 @@ mod test {
 
     bst.put("Test", 2);
     bst.put("Xayne", 4);
+    println!("bst: {:#?}", &bst);
     bst.put("Andrew", 45);
-    bst.put("David", 70);
-    bst.put("Rita", 70);
-    bst.put("Harley", 10000);
+    // bst.put("David", 70);
+    // bst.put("Rita", 70);
+    // bst.put("Harley", 10000);
 
     println!("bst: {:#?}", &bst);
 
