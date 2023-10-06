@@ -63,7 +63,7 @@ where
     BST::get_node(&self.root, key)
   }
 
-  pub fn get_node(node: &'tree Link<K, V>, key: &'static K) -> Option<&'tree V> {
+  fn get_node(node: &'tree Link<K, V>, key: &'static K) -> Option<&'tree V> {
     match node {
       None => None,
       Some(n) => {
@@ -96,6 +96,7 @@ where
 
     let mut node = self.put_descend(root, key, value);
     self.root = node.take();
+    self.root.as_mut().unwrap().color = Color::Black;
   }
 
   fn put_descend(&self, mut h: Link<K, V>, key: K, value: V) -> Link<K, V> {
@@ -150,6 +151,7 @@ where
   fn balance(h: Node<K, V>) -> Link<K, V> {
     #[allow(unused_assignments)]
     let mut node_rotate = Link::default();
+    // let mut node_rotate = Node::default();
 
     if (h.right.is_some() && BST::is_red(&h.right))
       && (h.left.is_none() || h.left.is_some() && !BST::is_red(&h.left))
@@ -161,10 +163,9 @@ where
     }
 
     let mut rot_node = node_rotate.unwrap();
-    // println!("AFTER LEFT: rot_node: {:#?}", &rot_node);
     if (rot_node.left.is_some() && BST::is_red(&rot_node.left))
       && (rot_node.left.as_ref().unwrap().left.is_some()
-        && !BST::is_red(&rot_node.left.as_ref().unwrap().left))
+        && BST::is_red(&rot_node.left.as_ref().unwrap().left))
     {
       // println!("rotating right");
       let new_node = BST::rotate_right(*rot_node);
@@ -225,6 +226,10 @@ mod test {
   #[test]
   fn tree_rotates() {
     let mut bst: BST<&str, usize> = BST::new();
+
+    // bst.put("c", 1);
+    // bst.put("a", 1);
+    // bst.put("b", 1);
 
     bst.put("S", 1);
     bst.put("E", 1);
