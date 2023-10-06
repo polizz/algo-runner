@@ -31,6 +31,7 @@ fn main() {
     let mut ht: HashTableLinear<&str, usize> = HashTableLinear::new(num_buckets);
 
     words.iter().enumerate().for_each(|(ix, val)| {
+      #[allow(suspicious_double_ref_op)]
       ht.put(val.clone(), ix);
     });
 

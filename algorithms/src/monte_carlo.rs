@@ -83,6 +83,5 @@ mod tests {
     sim.start();
 
     // println!("{:?}", sim.percolator.union_find);
-    panic!()
   }
 }

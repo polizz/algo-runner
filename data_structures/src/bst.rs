@@ -1,6 +1,5 @@
-// use std::mem;
+use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{Debug, Display};
-use std::borrow::{BorrowMut, Borrow};
 use std::mem;
 
 type Link<K, V> = Option<Box<Node<K, V>>>;
@@ -8,37 +7,37 @@ type Link<K, V> = Option<Box<Node<K, V>>>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Color {
   Red,
-  Black
+  Black,
 }
 
 #[derive(Debug, Clone)]
 pub struct Node<K, V>
 where
   K: Debug + Display,
-  V: Debug + Display
+  V: Debug + Display,
 {
   key: K,
   value: V,
   right: Link<K, V>,
   left: Link<K, V>,
   color: Color,
-  count: usize
+  count: usize,
 }
 
 impl<K, V> Default for Node<K, V>
 where
   K: Default + Debug + Display,
-  V: Default + Debug + Display
+  V: Default + Debug + Display,
 {
   fn default() -> Self {
-      Node {
-        key: K::default(),
-        value: V::default(),
-        right: None,
-        left: None,
-        color: Color::Red,
-        count: 1
-      }
+    Node {
+      key: K::default(),
+      value: V::default(),
+      right: None,
+      left: None,
+      color: Color::Red,
+      count: 1,
+    }
   }
 }
 
@@ -46,20 +45,18 @@ where
 pub struct BST<K, V>
 where
   K: Default + Debug + Display,
-  V: Default + Debug + Display
+  V: Default + Debug + Display,
 {
-  root: Link<K, V>
+  root: Link<K, V>,
 }
 
 impl<'tree, K, V> BST<K, V>
 where
   K: Default + Debug + Display + Eq + Ord,
-  V: Default + Debug + Display
+  V: Default + Debug + Display,
 {
   pub fn new() -> Self {
-    BST {
-      root: None
-    }
+    BST { root: None }
   }
 
   pub fn get(&self, key: &'static K) -> Option<&V> {
@@ -90,12 +87,13 @@ where
   fn size_tree(node: &Link<K, V>) -> usize {
     match node {
       None => 0,
-      Some(n) => n.count
+      Some(n) => n.count,
     }
   }
-  
+
   pub fn put(&mut self, key: K, value: V) {
     let root = self.root.take();
+
     let mut node = self.put_descend(root, key, value);
     self.root = node.take();
   }
@@ -108,11 +106,11 @@ where
         right: None,
         left: None,
         color: Color::Red,
-        count: 1
+        count: 1,
       })),
       Some(ref mut h_next) => {
         let h_node: &mut Node<K, V> = h_next.borrow_mut();
-        
+
         if key > h_node.key {
           h_node.right = self.put_descend(h_node.right.take(), key, value);
         } else if key < h_node.key {
@@ -123,12 +121,7 @@ where
 
         h_node.count = 1 + BST::size_tree(&h_node.left) + BST::size_tree(&h_node.right);
 
-        drop(h_node);
-
-        // h = BST::balance(mem::take(h_next));
-        
-        println!("after Balance: {:?}", &h);
-
+        h = BST::balance(mem::take(h_next));
         h
       }
     }
@@ -142,125 +135,87 @@ where
 
         match &node_b.color {
           Color::Red => true,
-          Color::Black => false
+          Color::Black => false,
         }
       }
     }
   }
 
   pub fn flip_colors(h: &mut Node<K, V>) {
-    // let mut h = h.take().unwrap();
-    // let mut h: &mut Node<K, V> = h.borrow_mut();
-
     h.color = Color::Red;
-
     h.right.as_mut().unwrap().color = Color::Black;
-    // let h_right = h.right.as_mut().unwrap();
-    // let mut h_right: &mut Node<K, V> = h_right.borrow_mut();
-    // h_right.color = Color::Black;
-
     h.left.as_mut().unwrap().color = Color::Black;
   }
 
-  /*
   fn balance(h: Node<K, V>) -> Link<K, V> {
-    // let h = node;
-    // let mut h: &mut Node<K, V> = node.borrow_mut();
-
-    println!("Balancing: {:?}", &h);
-
+    #[allow(unused_assignments)]
     let mut node_rotate = Link::default();
 
-    if (h.right.is_some() && BST::is_red(&h.right)) && (h.left.is_none() || h.left.is_some() && !BST::is_red(&h.left)) {
-      println!("rotating left");
+    if (h.right.is_some() && BST::is_red(&h.right))
+      && (h.left.is_none() || h.left.is_some() && !BST::is_red(&h.left))
+    {
+      // println!("rotating left");
       node_rotate = BST::rotate_left(h);
+    } else {
+      node_rotate = Some(Box::new(h));
     }
-    let h_r = *(&node_rotate.as_ref().unwrap());
-    if ((&h_r.left).is_some() && BST::is_red(&h_r.left)) && (h_r.left.is_some() && (&h_r.left).as_ref().unwrap().left.is_some() && !BST::is_red(&h_r.left.unwrap().left)) {
-      println!("rotating right");
-      BST::rotate_right(**h_r);
-    }
-    // if (h.left.is_some() && BST::is_red(&h.left)) && (h.right.is_some() && !BST::is_red(&h.right)) {
-    //   println!("flipping colors");
-    //   BST::flip_colors(h);
-    // }
 
-    // h
-    // node_rotate
-    Link::default()
+    let mut rot_node = node_rotate.unwrap();
+    // println!("AFTER LEFT: rot_node: {:#?}", &rot_node);
+    if (rot_node.left.is_some() && BST::is_red(&rot_node.left))
+      && (rot_node.left.as_ref().unwrap().left.is_some()
+        && !BST::is_red(&rot_node.left.as_ref().unwrap().left))
+    {
+      // println!("rotating right");
+      let new_node = BST::rotate_right(*rot_node);
+      rot_node = new_node.unwrap();
+    }
+
+    if (rot_node.left.is_some() && BST::is_red(&rot_node.left))
+      && (rot_node.right.is_some() && BST::is_red(&rot_node.right))
+    {
+      // println!("flipping colors");
+      BST::flip_colors(&mut rot_node);
+    }
+
+    Some(rot_node)
   }
-  */
+
   pub fn rotate_left(mut h: Node<K, V>) -> Link<K, V> {
     // H is above X and is < X. X is on H's right.
     // They will switch places and X.
     // being < H, will be above H and X will be on H's left.
 
     let x_moved = mem::replace(&mut h.right, None);
-    // let mut h_moved = mem::replace(h, Node::default());
-
     let mut x_u = *(x_moved.unwrap());
-    println!("BEFORE h: {:?}, x: {:?}", &h, &x_u);
-    
+
     h.right = mem::replace(&mut x_u.left, None);
     x_u.count = h.count;
     h.count = 1 + BST::size_tree(&h.left) + BST::size_tree(&h.right);
-    
+
     x_u.color = h.color;
     h.color = Color::Red;
 
     mem::swap(&mut x_u.left, &mut Some(Box::new(h)));
-    
+
     Some(Box::new(x_u))
   }
 
   pub fn rotate_right(mut h: Node<K, V>) -> Link<K, V> {
-    let x_moved = mem::replace(&mut h.right, None);
-    // let mut h_moved = mem::replace(h, Node::default());
-
+    let x_moved = mem::replace(&mut h.left, None);
     let mut x_u = *(x_moved.unwrap());
-    println!("BEFORE h: {:?}, x: {:?}", &h, &x_u);
-    
+
     h.left = mem::replace(&mut x_u.right, None);
     x_u.count = h.count;
     h.count = 1 + BST::size_tree(&h.left) + BST::size_tree(&h.right);
-    
+
     x_u.color = h.color;
     h.color = Color::Red;
 
     mem::swap(&mut x_u.right, &mut Some(Box::new(h)));
-    
+
     Some(Box::new(x_u))
-
-    // let x_moved = mem::replace(&mut h.left, None);
-    // let mut h_moved = mem::replace(h, Node::default());
-
-    // let mut x_u = *(x_moved.unwrap());
-
-    // h_moved.left = mem::replace(&mut x_u.right, None);
-    // x_u.count = h_moved.count;
-    // h_moved.count = 1 + BST::size_tree(&h_moved.left) + BST::size_tree(&h_moved.right);
-
-    // x_u.color = h_moved.color;
-    // h_moved.color = Color::Red;
-
-    // // mem::replace(&mut x_u.right, Some(h_moved));
-
-    // *h = h_moved;
-    // x_u
   }
-  // isRed(Node) -> bool
-  // rotateLeft(Node) -> Node
-  // rotateRight(Node) -> Node
-  // flipColors(Node) -> ()
-  // size() -> usize
-  // pub fn put(Key, Value) -> ()
-  // fn put(Node, Key, Value)
-  // get(Key) -> Node
-  // min() -> Node
-  // max() -> Node
-  // deleteMin()
-  // deleteMax()
-  // keys
 }
 
 #[cfg(test)]
@@ -271,31 +226,30 @@ mod test {
   fn tree_rotates() {
     let mut bst: BST<&str, usize> = BST::new();
 
-    bst.put("Test", 2);
-    bst.put("Xayne", 4);
-    println!("bst: {:#?}", &bst);
-    bst.put("Andrew", 45);
-    // bst.put("David", 70);
-    // bst.put("Rita", 70);
-    // bst.put("Harley", 10000);
+    bst.put("S", 1);
+    bst.put("E", 1);
+    bst.put("A", 1);
+    bst.put("R", 1);
+    bst.put("C", 1);
+    bst.put("H", 1);
+    bst.put("X", 1);
+    bst.put("M", 1);
+    bst.put("P", 1);
+    bst.put("L", 1);
 
-    println!("bst: {:#?}", &bst);
-
-    assert_eq!(bst.size(), 6usize);
+    assert_eq!(bst.size(), 10usize);
   }
 
   #[test]
   fn tree_has_a_count() {
     let mut bst: BST<&str, usize> = BST::new();
 
-    bst.put("Test", 2);
-    bst.put("Xayne", 4);
-    bst.put("Andrew", 45);
-    bst.put("David", 70);
-    bst.put("Rita", 70);
-    bst.put("Harley", 10000);
-
-    // println!("bst: {:#?}", &bst);
+    bst.put("T", 2);
+    bst.put("X", 4);
+    bst.put("A", 45);
+    bst.put("D", 70);
+    bst.put("R", 70);
+    bst.put("H", 10000);
 
     assert_eq!(bst.size(), 6usize);
   }
@@ -305,16 +259,14 @@ mod test {
     let mut bst: BST<&str, usize> = BST::new();
 
     bst.put("Root", 2);
-    bst.put("L. Ashley", 4);
-    bst.put("W. Andrew", 45);
-    bst.put("G. David", 70);
-    bst.put("J. Rita", 70);
-    bst.put("Harley", 10000);
+    bst.put("L.", 4);
+    bst.put("W.", 45);
+    bst.put("G.", 70);
+    bst.put("J.", 70);
+    bst.put("H.", 10000);
 
-    let andrew_value = bst.get(&"Harley");
+    let value = bst.get(&"H.");
 
-    println!("bst: {:#?}", &bst);
-
-    assert_eq!(andrew_value, Some(&10000));
+    assert_eq!(value, Some(&10000));
   }
 }

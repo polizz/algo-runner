@@ -1,5 +1,5 @@
-use std::fs::File;
 use std::fmt::{Debug, Display};
+use std::fs::File;
 use std::io::prelude::*;
 use std::iter::zip;
 use std::path::PathBuf;
@@ -42,7 +42,7 @@ pub struct HashTableLinear<K, V> {
 impl<K, V> HashTableLinear<K, V>
 where
   K: Clone + Hashable + Display + PartialEq + Debug,
-  V: Clone + Display + Debug
+  V: Clone + Display + Debug,
 {
   pub fn new(m: usize) -> Self {
     HashTableLinear {
@@ -71,7 +71,7 @@ where
         });
 
         // println!("Probe idx {:?}", &next_bucket.unwrap());
-        
+
         assign_idx = next_bucket.unwrap_or_else(|| {
           panic!(
             "Collision not resolved for new key {:?}. Existing key: {:?} at index {:?}",
@@ -129,29 +129,25 @@ where
     //   .map(|(idx, _)| idx)
     //   .collect::<Vec<usize>>();
 
-    let mut rehash_keys= Vec::new();
-    let mut rehash_values= Vec::new();
-
+    let mut rehash_keys = Vec::new();
+    let mut rehash_values = Vec::new();
 
     // println!("Redo range: {:#?}, vec len: {:?}", &redo_range, &self.keys.len());
 
-    redo_range
-      .iter()
-      .for_each(|&r_idx| {
-        rehash_keys.push(self.keys[r_idx].take());
-        self.keys[r_idx] = None;
+    redo_range.iter().for_each(|&r_idx| {
+      rehash_keys.push(self.keys[r_idx].take());
+      self.keys[r_idx] = None;
 
-        rehash_values.push(self.values[r_idx].take());
-        self.values[r_idx] = None;
-      });
+      rehash_values.push(self.values[r_idx].take());
+      self.values[r_idx] = None;
+    });
 
     // println!("Rehash keys: {:?}", &rehash_keys);
 
-    zip(rehash_keys, rehash_values)
-      .for_each(|(k, v)| {
-        // println!("ZIP: K={:#?} V={:#?}", &k, &v);
-        self.put(k.unwrap(), v.unwrap())
-      });
+    zip(rehash_keys, rehash_values).for_each(|(k, v)| {
+      // println!("ZIP: K={:#?} V={:#?}", &k, &v);
+      self.put(k.unwrap(), v.unwrap())
+    });
 
     (deleted_key, deleted_val)
   }
@@ -173,7 +169,7 @@ where
           if let Some(new_idx) = del_idx {
             // println!("Successful (del) probe for key: {} at idx: {}", &key, &new_idx);
             let redo_range: Vec<usize> = self.get_redo_range(new_idx);
-            
+
             // probe found key, delete it and re-add everything below it up to the first None
             Some(self.delete_idx(new_idx, redo_range))
           } else {
@@ -185,22 +181,22 @@ where
           let redo_range: Vec<usize> = self.get_redo_range(idx);
           Some(self.delete_idx(idx, redo_range))
         }
-      },
-      _ => None
+      }
+      _ => None,
     }
   }
 
-  pub fn keys(&self) -> &Vec<Option<K>>{
+  pub fn keys(&self) -> &Vec<Option<K>> {
     &self.keys
   }
 
-  pub fn values(&self) -> &Vec<Option<V>>{
+  pub fn values(&self) -> &Vec<Option<V>> {
     &self.values
   }
 
   fn get_redo_range(&self, del_idx: usize) -> Vec<usize> {
     // println!("get_redo_range del_idx: {:?}", &del_idx);
-    
+
     if del_idx == self.keys.len() - 1 || del_idx == 0 {
       (0..(self.keys.len() - 1))
         .take_while(|&n| n != del_idx && self.keys[n].is_some())
@@ -262,6 +258,7 @@ pub fn get_words_from_file(word_file_path: PathBuf) -> String {
 }
 
 #[cfg(test)]
+#[allow(suspicious_double_ref_op)]
 mod tests {
   use std::str::FromStr;
 
@@ -280,7 +277,7 @@ mod tests {
 
     println!("Before del: {:?}", &ht);
     // println!("Hash: {}", "two".get_hash(3));
-    
+
     // ht.put("two", 1000);
     assert_eq!(ht.get(&"Does not exist"), &None);
   }
@@ -297,10 +294,10 @@ mod tests {
 
     ht.delete(&"a billion");
     assert_eq!(ht.get(&"a billion"), &None);
-    
+
     ht.put("two", 1000);
     assert_eq!(ht.get(&"two"), &Some(1000));
-    
+
     // println!("After del: {:?}", &ht);
   }
 
@@ -349,7 +346,6 @@ mod tests {
     ]
     .iter()
     .map(|s| String::from_str(s).unwrap().get_hash(571))
-    // .map(|s| String::from_str(s).unwrap().get_hash(571))
     .collect::<Vec<usize>>();
 
     println!("Hashes: {:#?}", hashes);

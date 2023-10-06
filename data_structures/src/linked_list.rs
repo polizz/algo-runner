@@ -1,30 +1,26 @@
-
 pub mod linked_list {
 
   #[derive(Debug)]
   pub struct Node<T> {
     data: T,
+    #[allow(dead_code)]
     id: usize,
-    next: Option<*mut Node<T>>
+    next: Option<*mut Node<T>>,
   }
 
   impl<T> Node<T>
   where
-    T: Copy
+    T: Copy,
   {
     pub fn new(data: T, id: usize, next: Option<*mut Node<T>>) -> Self {
-      Node {
-        id,
-        data,
-        next
-      }
+      Node { id, data, next }
     }
   }
 
   #[derive(Debug)]
   pub struct List<T> {
     len: usize,
-    head: Option<*mut Node<T>>
+    head: Option<*mut Node<T>>,
   }
 
   trait ListTrait<T> {
@@ -35,13 +31,10 @@ pub mod linked_list {
 
   impl<T> ListTrait<T> for List<T>
   where
-    T: Copy
+    T: Copy,
   {
     fn new() -> Self {
-      List {
-        len: 0,
-        head: None,
-      }
+      List { len: 0, head: None }
     }
 
     fn add(&mut self, val: T) {
@@ -55,7 +48,7 @@ pub mod linked_list {
       ListIter {
         current_iter_item: None,
         head: self.head,
-        end: false
+        end: false,
       }
     }
   }
@@ -64,18 +57,18 @@ pub mod linked_list {
   pub struct ListIter<T> {
     current_iter_item: Option<*mut Node<T>>,
     head: Option<*mut Node<T>>,
-    end: bool
+    end: bool,
   }
-  
+
   impl<T> Iterator for ListIter<T>
   where
-    T: Copy
+    T: Copy,
   {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
       if self.end == true {
-        return None
+        return None;
       }
 
       match self.current_iter_item {
@@ -90,22 +83,19 @@ pub mod linked_list {
 
             None
           }
-        },
-        Some(last_node) => {
-          unsafe {
-            let next_node = (*last_node).next;
-            self.current_iter_item = next_node;
-
-            if next_node.is_none() {
-              self.end = true;
-              return None
-            }
-
-            Some((*next_node.unwrap()).data)
-          }
         }
-      }
+        Some(last_node) => unsafe {
+          let next_node = (*last_node).next;
+          self.current_iter_item = next_node;
 
+          if next_node.is_none() {
+            self.end = true;
+            return None;
+          }
+
+          Some((*next_node.unwrap()).data)
+        },
+      }
     }
   }
 
@@ -116,13 +106,12 @@ pub mod linked_list {
     #[test]
     fn init() {
       let mut l = List::new();
-      
+
       l.add(32);
       l.add(24);
       l.add(2);
       l.add(5);
       l.add(11);
-
 
       println!("List len: {}", &l.len);
     }
@@ -130,7 +119,7 @@ pub mod linked_list {
     #[test]
     fn iter_test() {
       let mut l = List::new();
-      
+
       l.add(2);
       l.add(245);
       l.add(32);
@@ -152,5 +141,5 @@ pub mod linked_list {
       println!("Iter collected: {:#?}", &col2);
     }
   }
-
 }
+

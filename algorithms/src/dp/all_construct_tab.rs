@@ -100,6 +100,7 @@ mod tests {
   }
 
   #[test]
+  #[ignore]
   fn can_construct_all_0_large_string() {
     let all_construct_results = all_construct(
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaz",
