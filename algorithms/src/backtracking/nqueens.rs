@@ -44,13 +44,7 @@ impl Solution {
     board[row as usize][col as usize] = false;
   }
 
-  pub fn queens_r(
-    n: i32,
-    mut board: &mut Vec<Vec<bool>>,
-    col: i32,
-    good_boards: &mut i32,
-    d: u32,
-  ) -> bool {
+  pub fn queens_r(n: i32, mut board: &mut Vec<Vec<bool>>, col: i32, good_boards: &mut i32) -> bool {
     if col == n {
       *good_boards = *good_boards + 1;
       return true;
@@ -61,7 +55,7 @@ impl Solution {
       // in current col, startig at 0 row, try placing queen and check if queen is safe
       if Solution::is_safe(n, &board, r, col) {
         Solution::place_queen(&mut board, r, col);
-        Solution::queens_r(n, &mut board, col + 1, good_boards, d + 1);
+        Solution::queens_r(n, &mut board, col + 1, good_boards);
         Solution::remove_queen(&mut board, r, col);
       }
     }
@@ -76,7 +70,7 @@ impl Solution {
     let mut board = vec![vec![false; u_n]; u_n];
     let mut num_good_boards = 0;
 
-    Solution::queens_r(n, &mut board, 0, &mut num_good_boards, 0);
+    Solution::queens_r(n, &mut board, 0, &mut num_good_boards);
 
     num_good_boards
   }
@@ -96,6 +90,12 @@ mod tests {
     assert_eq!(Solution::is_safe(4, &board, 0, 1), true);
     assert_eq!(Solution::is_safe(4, &board, 0, 3), true);
     assert_eq!(Solution::is_safe(4, &board, 1, 3), true);
+  }
+
+  #[test]
+  fn nq_test3() {
+    let n = Solution::total_n_queens(18);
+    println!("9x9 total slns: {n}");
   }
 
   #[test]

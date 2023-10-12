@@ -45,3 +45,6 @@ pub use count_construct_tab::count_construct_tab;
 
 pub mod all_construct_tab;
 pub use all_construct_tab::all_construct;
+
+pub mod levenshtein;
+pub use levenshtein::get_distance_matrix;
