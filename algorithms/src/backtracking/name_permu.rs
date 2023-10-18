@@ -1,7 +1,7 @@
 struct Permu {}
 
 impl Permu {
-  pub fn smoke_r<'main>(letters: &Vec<&'main str>, words: &mut Vec<String>, word: &mut Vec<String>, used_letters: &mut Vec<bool>, k: usize) {
+  pub fn smoke_r<'main>(letters: &Vec<u8>, words: &mut Vec<String>, word: &mut Vec<String>, used_letters: &mut Vec<bool>, k: usize) {
     if word.len() == k {
         let to_string: String = word.clone().iter().fold("".to_string(), |mut acc, l| {
           acc.push_str(l);
@@ -31,7 +31,7 @@ impl Permu {
 
   pub fn smoke() {
     // let letters = vec!["a", "n", "d", "a", "s", "h", "l", "i", "a"];
-    let letters = vec!["a", "a", "l"];
+    let letters = vec![b'a', b'a', b'l'];
     let mut words = vec![];
     let mut word: Vec<String> = vec![];
     let mut used_letters = vec![false; 9];
