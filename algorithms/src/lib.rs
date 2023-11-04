@@ -27,3 +27,12 @@ pub use dp::how_sum_tab::how_sum_tab;
 
 mod backtracking;
 pub use backtracking::Solution;
+
+mod islands;
+pub use islands::IslandSolution;
+
+mod graph;
+pub use graph::prim;
+
+mod two_d_path_find;
+pub use two_d_path_find::TwoD_PathFinding;
