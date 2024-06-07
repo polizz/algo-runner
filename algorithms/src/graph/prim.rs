@@ -91,36 +91,36 @@ impl Prim {
   pub fn get_min_span_tree(g: MyGraph, start_vertex: usize) -> f64 {
     let mut in_tree = vec![false; g.v_count];
     let mut parent = vec![usize::MAX; g.v_count];
-    let mut distance_to_start = vec![f64::MAX; g.v_count];
+    let mut weights = vec![f64::MAX; g.v_count];
     let mut total_weight = 0.0;
     let mut v = start_vertex;
-    let mut dist = 0.0;
+    let mut weight = 0.0;
 
-    distance_to_start[start_vertex] = 0.0;
+    weights[start_vertex] = 0.0;
 
     while !in_tree[v] {
       in_tree[v] = true;
 
       if v != start_vertex {
-        total_weight = total_weight + dist;
+        total_weight = total_weight + weight;
       }
 
       for edge in &g.edges[v] {
-        if distance_to_start[edge.to] > edge.weight && !in_tree[edge.to] {
-          // set distance to each vertext for each edge for this vertex
-          distance_to_start[edge.to] = edge.weight;
+        if weights[edge.to] > edge.weight && !in_tree[edge.to] {
+          // set distance to each vertex for each edge for this vertex
+          weights[edge.to] = edge.weight;
           // set parent for each destination vertex for each edge for this vertex
           parent[edge.to] = v;
         }
       }
       // dbg!(&in_tree, &parent, &distance_to_start);
 
-      dist = f64::MAX;
+      weight = f64::MAX;
       for vertex in 0..g.v_count {
         // println!("{vertex}");
         // for all vertices not in tree, pick one with smallest
-        if !in_tree[vertex] && dist > distance_to_start[vertex] {
-          dist = distance_to_start[vertex];
+        if !in_tree[vertex] && weight > weights[vertex] {
+          weight = weights[vertex];
           v = vertex;
         }
       }

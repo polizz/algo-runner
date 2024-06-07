@@ -1,10 +1,10 @@
 mod hashtable;
-mod bst;
 mod linked_list;
+mod rb_tree;
 
 pub use hashtable::*;
-pub use bst::*;
 pub use linked_list::*;
+pub use rb_tree::*;
 
 // #[cfg(test)]
 // mod tests {
