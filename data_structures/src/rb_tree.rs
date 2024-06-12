@@ -1,9 +1,7 @@
-use std::cell::{Ref, RefCell};
 use std::fmt::{Debug, Display};
-use std::rc::Rc;
+use std::ptr;
 
-type BareLink<K, V> = Rc<RefCell<Node<K, V>>>;
-type Link<K, V> = Option<BareLink<K, V>>;
+type Link<K, V> = *mut Node<K, V>;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Color {
@@ -34,11 +32,73 @@ where
     Node {
       key: K::default(),
       value: V::default(),
-      right: None,
-      left: None,
+      right: ptr::null_mut(),
+      left: ptr::null_mut(),
       color: Color::Red,
       count: 1,
     }
+  }
+}
+
+// function printBST<K, V>(tree: Tree<K, V>) {
+//   function printTree(indent: string, tree?: Tree<K, V>) {
+//     if (tree === undefined) {
+//       return indent + ' └── ' + 'Empty\n'
+//     } else {
+//       let treeString = indent + ' ├── ' + tree!.key + ` (${tree.color})\n`
+//       indent += ' │  '
+//       treeString += printTree(indent, tree!.left)
+//       treeString += printTree(indent, tree!.right)
+//
+//       return treeString
+//     }
+//   }
+//
+//   return printTree("", tree)
+// }
+
+impl<K, V> Display for Node<K, V>
+where
+  K: Default + Debug + Display,
+  V: Default + Debug + Display + Clone,
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn print_tree<K: Display + Debug, V: Display + Debug + Clone>(
+      indent: &mut String,
+      tree: Link<K, V>,
+    ) -> String {
+      unsafe {
+        if tree.is_null() {
+          format!("{}└── Empty\n", &indent)
+        } else {
+          let mut tree_string = format!("{}├──{} ({:?})\n", &indent, &(*tree).key, &(*tree).color);
+          indent.push_str("│  ");
+          tree_string.push_str(&print_tree(&mut indent.clone(), (*tree).right));
+          tree_string.push_str(&print_tree(&mut indent.clone(), (*tree).left));
+
+          tree_string
+        }
+      }
+    }
+
+    write!(
+      f,
+      "{}",
+      print_tree(
+        &mut String::new(),
+        self as *const Node<K, V> as *mut Node<K, V>
+      )
+    )
+  }
+}
+
+impl<K, V> Display for BST<K, V>
+where
+  K: Default + Debug + Display,
+  V: Default + Debug + Display + Clone,
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    unsafe { write!(f, "bst:\n{}", *self.root) }
   }
 }
 
@@ -57,176 +117,138 @@ where
   V: Default + Debug + Display + Clone + 'static,
 {
   pub fn new() -> Self {
-    BST { root: None }
+    BST {
+      root: ptr::null_mut(),
+    }
   }
 
-  pub fn get(&self, key: &'static K) -> Option<Ref<V>> {
-    BST::get_node(&self.root, key)
+  pub fn get(&self, key: &'static K) -> Option<&V> {
+    BST::get_node(self.root, key)
   }
 
-  // {
-  fn get_node<'tree>(node: &'tree Link<K, V>, key: &'static K) -> Option<Ref<'tree, V>> {
-    // match node {
-    //   Some(ref n) => {
-    //     if key > &n.borrow().key {
-    //       BST::get_node(n.borrow().right.clone(), key)
-    //       // BST::get_node(&n.borrow().right, key)
-    //     } else if key < &n.borrow().key {
-    //       // BST::get_node(&n.borrow().left, key)
-    //       BST::get_node(n.borrow().left.clone(), key)
-    //     } else {
-    //       node
-    //         .as_ref()
-    //         .map(|node2| Ref::map(node2.borrow(), |n| &n.value))
-    //
-    //       // Some(Ref::map(node.as_ref().unwrap().borrow(), |n| &n.value))
-    //       //
-    //       // Some(Ref::map(n_test, |n: &Node<K, V>| &n.value))
-    //       // node.as_ref().map(|n| Ref::map(n, |n| &n.value))
-    //     }
-    //   }
-    //   _ => None,
-    // }
-
-    node.as_ref().map(|n| {
-      if key > &n.borrow().key {
-        BST::get_node(&n.borrow().right, key)
-      } else if key < &n.borrow().key {
-        BST::get_node(&n.borrow().left, key)
+  fn get_node(node: Link<K, V>, key: &'static K) -> Option<&V> {
+    unsafe {
+      if !node.is_null() {
+        if key > &(*node).key {
+          BST::get_node((*node).right, key)
+        } else if key < &(*node).key {
+          BST::get_node((*node).left, key)
+        } else {
+          Some(&(*node).value)
+        }
       } else {
-        Some(Ref::map((**n).borrow(), |n: &Node<K, V>| &n.value))
+        return None;
       }
-    })?
+    }
   }
 
   pub fn size(&self) -> usize {
-    BST::size_tree(&self.root)
+    BST::size_tree(self.root)
   }
 
-  fn size_tree(node: &Link<K, V>) -> usize {
+  fn size_tree(node: Link<K, V>) -> usize {
     // let i = node.unwrap().as_ref().borrow();
-
-    match node {
-      None => 0,
-      Some(n) => {
-        let n = n.as_ref().borrow();
-        n.count
+    unsafe {
+      if !node.is_null() {
+        (*node).count
+      } else {
+        0
       }
     }
   }
 
   pub fn put(&mut self, key: K, value: V) {
-    let root = self.root.take();
+    let node = self.put_r(self.root, key, value);
 
-    let mut node = self.put_r(root, key, value);
-    // let x: Link<K, V> = self.root.unwrap().borrow().borrow_mut();
-    // let n1 = node.as_ref().unwrap();
-    // let mut n1 = n1.borrow_mut();
-    // n1.color = Color::Black;
-    node.as_ref().unwrap().borrow_mut().color = Color::Black;
+    unsafe {
+      (*node).color = Color::Black;
+    }
 
-    self.root = node.take();
+    self.root = node;
   }
 
   fn put_r(&self, h: Link<K, V>, key: K, value: V) -> Link<K, V> {
-    match h {
-      None => Some(Rc::new(RefCell::new(Node {
-        key,
-        value,
-        right: None,
-        left: None,
-        color: Color::Red,
-        count: 1,
-      }))),
-      Some(h_next) => {
-        let mut h_node = h_next.borrow_mut();
-
-        if key > h_node.key {
-          h_node.right = self.put_r(h_node.right.take(), key, value);
-        } else if key < h_node.key {
-          h_node.left = self.put_r(h_node.left.take(), key, value);
+    unsafe {
+      if !h.is_null() {
+        if key > (*h).key {
+          println!("key({}) > h.key({})", &key, &(*h).key);
+          (*h).right = self.put_r((*h).right, key, value);
+        } else if key <= (*h).key {
+          println!("key({}) < h.key({})", &key, &(*h).key);
+          (*h).left = self.put_r((*h).left, key, value);
         } else {
-          h_node.value = value;
+          println!("key({}) == h.key({})", &key, &(*h).key);
+          (*h).value = value;
         }
 
-        h_node.count = 1 + BST::size_tree(&h_node.left) + BST::size_tree(&h_node.right);
+        (*h).count = 1 + BST::size_tree((*h).left) + BST::size_tree((*h).right);
 
-        BST::balance(h_next)
+        println!("Before Balance");
+        println!("{}", *h);
+
+        let ret = BST::balance(h);
+
+        println!("After Balance");
+        println!("{}", *ret);
+        // h
+        ret
+      } else {
+        Box::into_raw(Box::new(Node {
+          key,
+          value,
+          right: ptr::null_mut(),
+          left: ptr::null_mut(),
+          color: Color::Red,
+          count: 1,
+        }))
       }
     }
   }
 
-  pub fn is_red(node: &Link<K, V>) -> bool {
-    match node {
-      None => false,
-      Some(n) => {
-        let node_b = n.as_ref().borrow();
-        // let node_b = node_b.borrow();
-
-        match &node_b.color {
+  pub fn is_red(node: Link<K, V>) -> bool {
+    unsafe {
+      if !node.is_null() {
+        match (*node).color {
           Color::Red => true,
           Color::Black => false,
         }
+      } else {
+        false
       }
     }
   }
 
   #[inline(always)]
-  pub fn flip_colors(h: BareLink<K, V>) {
-    h.borrow_mut().color = Color::Red;
-    h.borrow_mut().left.as_ref().unwrap().borrow_mut().color = Color::Black;
-    h.borrow_mut().right.as_ref().unwrap().borrow_mut().color = Color::Black;
+  pub fn flip_colors(h: Link<K, V>) {
+    unsafe {
+      (*h).color = Color::Red;
+      (*(*h).left).color = Color::Black;
+      (*(*h).right).color = Color::Black;
+    }
   }
 
-  fn balance(mut h: BareLink<K, V>) -> Link<K, V> {
-    // let h_ref = h.as_ref();
-    // let h_ref = h_ref.borrow_mut();
+  fn balance(mut h: Link<K, V>) -> Link<K, V> {
+    unsafe {
+      // if red node on right while no red node on left is not allowed, rotate left to fix
+      if (BST::is_red((*h).right)) && !BST::is_red((*h).left) {
+        println!("rotating left");
+        h = BST::rotate_left(h);
+      }
 
-    // #[allow(unused_assignments)]
-    // let rotated_node = h_ref;
+      // if both left child and left grandchild are red, rotate right
+      if (BST::is_red((*h).left)) && BST::is_red((*(*h).left).left) {
+        println!("rotating right");
+        h = BST::rotate_right(h);
+      }
 
-    // if red node on right while no red node on left is not allowed, rotate left to fix
-    if (h.borrow().right.is_some() && BST::is_red(&h.borrow().right))
-      && (h.borrow().left.is_none() || h.borrow().left.is_some() && !BST::is_red(&h.borrow().left))
-    {
-      // println!("rotating left");
-      // drop(h_ref);
-      // let h_c1 = Rc::clone(&h);
-      h = BST::rotate_left(h.clone()).unwrap();
+      // if both children are red, flip colors
+      if BST::is_red((*h).left) && BST::is_red((*h).right) {
+        println!("flipping colors");
+        BST::flip_colors(h.clone());
+      }
+
+      h
     }
-
-    // let h_left = (*(rotated_node.unwrap()))
-    //   .borrow()
-    //   .left
-    //   .map(|l| (*l).borrow());
-
-    // if both left child and left grandchild are red, rotate right
-    if (h.borrow().left.is_some() && BST::is_red(&h.borrow().left))
-      && (h.borrow().left.is_some() && BST::is_red(&h.borrow().left))
-    {
-      // println!("rotating right");
-      h = BST::rotate_right(h.clone()).unwrap();
-    }
-
-    // let rotated_node_ref = *rotated_node.unwrap();
-    // let mut rotated_node_b = rotated_node.borrow();
-
-    // let (h_left, h_right) = (
-    //   rotated_node.borrow().left.map(|l| (*l).borrow()),
-    //   rotated_node.borrow().right.map(|l| (*l).borrow()),
-    // );
-
-    // let h_right = rotated_node.borrow().right.map(|l| (*l).borrow());
-
-    // if both children are red, flip colors
-    if (h.borrow().left.is_some() && BST::is_red(&h.borrow().left))
-      && (h.borrow().right.is_some() && BST::is_red(&h.borrow().right))
-    {
-      // println!("flipping colors");
-      BST::flip_colors(h.clone());
-    }
-
-    Some(h)
 
     // let mut h = *h.borrow_mut();
     //
@@ -269,7 +291,7 @@ where
   }
 
   #[inline(always)]
-  pub fn rotate_left(h: BareLink<K, V>) -> Link<K, V> {
+  pub fn rotate_left(h: Link<K, V>) -> Link<K, V> {
     // H is above X and is < X. X is on H's right.
     // They will switch places and X
     // being > H, will be above H and H will be on X's left.
@@ -279,26 +301,20 @@ where
     //   |    |       red   |
     //  nil   x        h   nil
 
-    let mut h_b = h.borrow_mut();
+    unsafe {
+      let x = (*h).right;
 
-    // let x = mem::replace(&mut h_b.right, None);
-    let x = h_b.right.take();
-    // let mut x_u = x_moved.clone().unwrap();
+      (*h).right = (*x).left;
 
-    let mut x_moved = x.unwrap().borrow_mut();
-    h_b.right = x_moved.left.take();
+      (*x).count = (*h).count;
+      (*h).count = 1 + BST::size_tree((*h).left) + BST::size_tree((*h).right);
 
-    x_moved.count = h_b.count;
-    h_b.count = 1 + BST::size_tree(&h_b.left) + BST::size_tree(&h_b.right);
+      (*x).color = (*h).color;
+      (*h).color = Color::Red;
 
-    x_moved.color = h_b.color;
-    h_b.color = Color::Red;
-
-    x_moved.left = Some(Rc::clone(&h));
-    x
-    // mem::swap(&mut x_u.left, &mut Some(Rc::new(h)));
-    // Rc::clone(&x.unwrap())
-
+      (*x).left = h;
+      x
+    }
     // // H is above X and is < X. X is on H's right.
     // // They will switch places and X
     // // being > H, will be above H and H will be on X's left.
@@ -320,26 +336,29 @@ where
   }
 
   #[inline(always)]
-  pub fn rotate_right(h: BareLink<K, V>) -> Link<K, V> {
-    let mut h_b = h.borrow_mut();
+  pub fn rotate_right(h: Link<K, V>) -> Link<K, V> {
+    // H is above X and is > X. X is on H's left.
+    // They will switch places and X
+    // being < H, will be above H and H will be on X's right.
+    //
+    //   h(s)             x(e)
+    //   |------     ->   |------
+    //  red    |          |    red
+    //  x(e)  nil        nil   h(s)
 
-    // let x = mem::replace(&mut h_b.left, None);
-    let x = h_b.left.take();
-    let xt = x.unwrap();
-    let x_u = Rc::clone(&xt);
-    // let mut x_u = x_moved.clone().unwrap();
+    unsafe {
+      let x = (*h).left;
 
-    let mut x_moved = (*x_u).borrow_mut();
-    h_b.left = x_moved.right.take();
-    x_moved.count = h_b.count;
-    h_b.count = 1 + BST::size_tree(&h_b.left) + BST::size_tree(&h_b.right);
+      (*h).left = (*x).right;
+      (*x).count = (*h).count;
+      (*h).count = 1 + BST::size_tree((*h).left) + BST::size_tree((*h).right);
 
-    x_moved.color = h_b.color;
-    h_b.color = Color::Red;
+      (*x).color = (*h).color;
+      (*h).color = Color::Red;
 
-    x_moved.right = Some(Rc::clone(&h));
-    x
-    // mem::swap(&mut x_u.right, &mut Some(Rc::new(h)));
+      (*x).right = h;
+      x
+    }
   }
 }
 
@@ -379,8 +398,9 @@ mod test {
     // bst.put("P", 9);
     // bst.put("L", 10);
 
-    println!("tree: {:#?}", &bst);
-    assert_eq!(bst.size(), 10usize);
+    // println!("tree:");
+    // println!("{}", &bst);
+    assert_eq!(bst.size(), 12usize);
   }
 
   #[test]
