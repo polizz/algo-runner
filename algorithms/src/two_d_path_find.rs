@@ -8,6 +8,7 @@ type Location = (usize, usize);
 pub struct TwoD_PathFinding;
 
 impl TwoD_PathFinding {
+  #[inline]
   fn get_candidates_locs(curr_loc: Location, m: usize, n: usize) -> impl Iterator<Item = Location> {
     let (curr_row, curr_col) = curr_loc;
 
@@ -66,6 +67,8 @@ impl TwoD_PathFinding {
     let n = grid[0].len();
     let mut solutions: Vec<Location> = vec![];
     let mut seen: HashSet<Location> = HashSet::new();
+
+    //explicit stack for DFS
     let mut stack: Vec<Location> = vec![];
 
     for (i, row) in grid.iter().enumerate() {
@@ -78,7 +81,7 @@ impl TwoD_PathFinding {
           stack.push(found_loc);
 
           while let Some(loc) = stack.pop() {
-            let candidates =
+            stack.extend(
               TwoD_PathFinding::get_candidates_locs(loc, m, n).filter_map(|(r, c)| {
                 if grid[r][c] == 1 && !seen.contains(&(r, c)) {
                   seen.insert((r, c));
@@ -86,9 +89,8 @@ impl TwoD_PathFinding {
                 } else {
                   None
                 }
-              });
-
-            stack.extend(candidates);
+              }),
+            );
           }
         }
       }
@@ -102,8 +104,8 @@ impl TwoD_PathFinding {
     let n = grid[0].len();
     let mut solutions: Vec<Location> = vec![];
     let mut seen: HashSet<Location> = HashSet::new();
-    // let mut stack: Vec<Location> = vec![];
 
+    // recursive helper
     fn mark_connected_points(
       grid: &Vec<Vec<usize>>,
       seen: &mut HashSet<Location>,
@@ -114,21 +116,15 @@ impl TwoD_PathFinding {
     ) {
       let location = (i, j);
       println!("Marking: i:{i} j:{j}");
-      let candidates: Vec<Location> = TwoD_PathFinding::get_candidates_locs(location, m, n)
-        .filter_map(|(r, c)| {
-          if grid[r][c] == 1 && !seen.contains(&(r, c)) {
-            seen.insert((r, c));
-            Some((r, c))
-          } else {
-            None
-          }
-        })
-        .collect();
 
-      for (i, j) in candidates {
+      for (i, j) in TwoD_PathFinding::get_candidates_locs(location, m, n) {
         mark_connected_points(grid, seen, i, j, m, n);
       }
     }
+
+    // iterate all points. if a point is a 1, it's a product. if you have not seen that point
+    // you have found a new start coordinate for an island.
+    // if you have seen it, skip it
 
     for (i, row) in grid.iter().enumerate() {
       for (j, _) in row.iter().enumerate() {
@@ -138,20 +134,8 @@ impl TwoD_PathFinding {
           solutions.push(found_loc);
           seen.insert(found_loc);
 
-          let candidates: Vec<Location> = TwoD_PathFinding::get_candidates_locs(found_loc, m, n)
-            .filter_map(|(r, c)| {
-              if grid[r][c] == 1 && !seen.contains(&(r, c)) {
-                seen.insert((r, c));
-                Some((r, c))
-              } else {
-                None
-              }
-            })
-            .collect();
-
-          for (i, j) in candidates {
-            mark_connected_points(grid, &mut seen, i, j, m, n);
-          }
+          // start DFS
+          mark_connected_points(grid, &mut seen, i, j, m, n);
         }
       }
     }
