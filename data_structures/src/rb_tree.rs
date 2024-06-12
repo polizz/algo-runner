@@ -1,3 +1,5 @@
+// miri testing: cargo +nightly-2024-06-11 miri test tree_rotates
+
 use std::fmt::{Debug, Display};
 use std::ptr;
 
@@ -102,6 +104,35 @@ where
   }
 }
 
+impl<K, V> Drop for BST<K, V>
+where
+  K: Default + Debug + Display,
+  V: Default + Debug + Display + Clone,
+{
+  fn drop(&mut self) {
+    fn drop_r<K, V>(node: Link<K, V>)
+    where
+      K: Default + Debug + Display,
+      V: Default + Debug + Display + Clone,
+    {
+      unsafe {
+        if !(*node).left.is_null() {
+          drop_r((*node).left)
+        }
+        if !(*node).right.is_null() {
+          drop_r((*node).right)
+        }
+        if !node.is_null() {
+          // println!("dropping node: {}", (*node).key);
+          drop(Box::from_raw(node));
+        }
+      }
+    }
+    // println!("starting BST drop");
+    drop_r(self.root);
+  }
+}
+
 #[derive(Debug)]
 pub struct BST<K, V>
 where
@@ -171,27 +202,25 @@ where
     unsafe {
       if !h.is_null() {
         if key > (*h).key {
-          println!("key({}) > h.key({})", &key, &(*h).key);
+          // println!("key({}) > h.key({})", &key, &(*h).key);
           (*h).right = self.put_r((*h).right, key, value);
         } else if key <= (*h).key {
-          println!("key({}) < h.key({})", &key, &(*h).key);
+          // println!("key({}) < h.key({})", &key, &(*h).key);
           (*h).left = self.put_r((*h).left, key, value);
         } else {
-          println!("key({}) == h.key({})", &key, &(*h).key);
+          // println!("key({}) == h.key({})", &key, &(*h).key);
           (*h).value = value;
         }
 
         (*h).count = 1 + BST::size_tree((*h).left) + BST::size_tree((*h).right);
 
-        println!("Before Balance");
-        println!("{}", *h);
-
-        let ret = BST::balance(h);
-
-        println!("After Balance");
-        println!("{}", *ret);
-        // h
-        ret
+        BST::balance(h)
+        // println!("Before Balance");
+        // println!("{}", *h);
+        // let ret = BST::balance(h);
+        // println!("After Balance");
+        // println!("{}", *ret);
+        // ret
       } else {
         Box::into_raw(Box::new(Node {
           key,
@@ -398,8 +427,9 @@ mod test {
     // bst.put("P", 9);
     // bst.put("L", 10);
 
-    // println!("tree:");
-    // println!("{}", &bst);
+    println!("tree:");
+    println!("{}", &bst);
+
     assert_eq!(bst.size(), 12usize);
   }
 
