@@ -1,7 +1,58 @@
 // miri testing: cargo +nightly-2024-06-11 miri test tree_rotates
 
+use std::cmp;
 use std::fmt::{Debug, Display};
 use std::ptr;
+
+trait TreeStat {
+  fn get_min_max_black_depth(&self) -> (usize, usize);
+}
+
+impl<K, V> TreeStat for BST<K, V>
+where
+  K: Debug + Display + Default,
+  V: Debug + Display + Clone + Default,
+{
+  fn get_min_max_black_depth(&self) -> (usize, usize) {
+    fn get_heights_r<K, V>(
+      node: Link<K, V>,
+      mut min: usize,
+      mut max: usize,
+      mut black_depth: usize,
+    ) -> (usize, usize)
+    where
+      K: Debug + Display + Default,
+      V: Debug + Display + Clone,
+    {
+      unsafe {
+        if node.is_null() {
+          if black_depth > max {
+            max = black_depth;
+          }
+          if black_depth < min {
+            min = black_depth;
+          }
+
+          return (min, max);
+        }
+
+        if (*node).color == Color::Black {
+          black_depth = black_depth.wrapping_add(1);
+        }
+
+        let (min_l, max_l) = get_heights_r((*node).left, min, max, black_depth);
+        let (min_r, max_r) = get_heights_r((*node).right, min, max, black_depth);
+
+        (cmp::min(min_l, min_r), cmp::max(max_l, max_r))
+      }
+    }
+
+    let min = usize::MAX;
+    let max = 0;
+
+    get_heights_r(self.root, min, max, 0)
+  }
+}
 
 type Link<K, V> = *mut Node<K, V>;
 
@@ -41,23 +92,6 @@ where
     }
   }
 }
-
-// function printBST<K, V>(tree: Tree<K, V>) {
-//   function printTree(indent: string, tree?: Tree<K, V>) {
-//     if (tree === undefined) {
-//       return indent + ' └── ' + 'Empty\n'
-//     } else {
-//       let treeString = indent + ' ├── ' + tree!.key + ` (${tree.color})\n`
-//       indent += ' │  '
-//       treeString += printTree(indent, tree!.left)
-//       treeString += printTree(indent, tree!.right)
-//
-//       return treeString
-//     }
-//   }
-//
-//   return printTree("", tree)
-// }
 
 impl<K, V> Display for Node<K, V>
 where
@@ -123,12 +157,10 @@ where
           drop_r((*node).right)
         }
         if !node.is_null() {
-          // println!("dropping node: {}", (*node).key);
           drop(Box::from_raw(node));
         }
       }
     }
-    // println!("starting BST drop");
     drop_r(self.root);
   }
 }
@@ -178,7 +210,6 @@ where
   }
 
   fn size_tree(node: Link<K, V>) -> usize {
-    // let i = node.unwrap().as_ref().borrow();
     unsafe {
       if !node.is_null() {
         (*node).count
@@ -215,6 +246,7 @@ where
         (*h).count = 1 + BST::size_tree((*h).left) + BST::size_tree((*h).right);
 
         BST::balance(h)
+
         // println!("Before Balance");
         // println!("{}", *h);
         // let ret = BST::balance(h);
@@ -278,45 +310,6 @@ where
 
       h
     }
-
-    // let mut h = *h.borrow_mut();
-    //
-    // #[allow(unused_assignments)]
-    // let mut node_rotate = Node::default();
-    //
-    // // if red node on right while no red node on left is not allowed, rotate left to fix
-    //
-    // if (h.right.is_some() && BST::is_red(&h.right))
-    //   && (h.left.is_none() || h.left.is_some() && !BST::is_red(&h.left))
-    // {
-    //   // println!("rotating left");
-    //   BST::rotate_left(h);
-    //   // node_rotate = BST::rotate_left(h);
-    // } else {
-    //   node_rotate = h;
-    // }
-    //
-    // // if left child and it's left child are red, rotate right
-    //
-    // // let mut rot_node = node_rotate.unwrap();
-    // if (node_rotate.left.is_some() && BST::is_red(&node_rotate.left))
-    //   && (node_rotate.left.as_ref().unwrap().left.is_some()
-    //     && BST::is_red(&node_rotate.left.as_ref().unwrap().left))
-    // {
-    //   // println!("rotating right");
-    //   let new_node = BST::rotate_right(node_rotate);
-    //   node_rotate = new_node;
-    // }
-    //
-    // // if both children are red, flip colorsk
-    // if (node_rotate.left.is_some() && BST::is_red(&node_rotate.left))
-    //   && (node_rotate.right.is_some() && BST::is_red(&node_rotate.right))
-    // {
-    //   // println!("flipping colors");
-    //   BST::flip_colors(&mut node_rotate);
-    // }
-    //
-    // Some(Rc::new(node_rotate))
   }
 
   #[inline(always)]
@@ -344,24 +337,6 @@ where
       (*x).left = h;
       x
     }
-    // // H is above X and is < X. X is on H's right.
-    // // They will switch places and X
-    // // being > H, will be above H and H will be on X's left.
-    // let mut h = *h.borrow_mut();
-    //
-    // let x_moved = mem::replace(&mut h.right, None);
-    // let mut x_u = x_moved.clone().unwrap();
-    //
-    // h.right = mem::replace(&mut x_u.left, None);
-    // x_u.count = h.count;
-    // h.count = 1 + BST::size_tree(&h.left) + BST::size_tree(&h.right);
-    //
-    // x_u.color = h.color;
-    // h.color = Color::Red;
-    //
-    // mem::swap(&mut x_u.left, &mut Some(Rc::new(h)));
-    //
-    // x_u
   }
 
   #[inline(always)]
@@ -389,6 +364,25 @@ where
       x
     }
   }
+
+  pub fn delete(h: Link<K, V>) -> Link<K, V> {
+    //   delete x
+    //
+    //   h
+    //   |-----
+    //  red   |
+    //   x   nil
+    //
+    //
+    //
+    //
+    //   drop(Box::from_raw(h))
+    //
+    //
+    //
+    //
+    unimplemented!()
+  }
 }
 
 #[cfg(test)]
@@ -398,10 +392,6 @@ mod test {
   #[test]
   fn tree_rotates() {
     let mut bst: BST<&str, usize> = BST::new();
-
-    // bst.put("c", 1);
-    // bst.put("a", 1);
-    // bst.put("b", 1);
 
     bst.put("A", 1);
     bst.put("B", 2);
@@ -447,19 +437,56 @@ mod test {
     assert_eq!(bst.size(), 6usize);
   }
 
-  // #[test]
-  // fn can_get_elements() {
-  //   let mut bst: BST<&str, usize> = BST::new();
-  //
-  //   bst.put("Root", 2);
-  //   bst.put("L.", 4);
-  //   bst.put("W.", 45);
-  //   bst.put("G.", 70);
-  //   bst.put("J.", 70);
-  //   bst.put("H.", 10000);
-  //
-  //   let value = bst.get(&"H.");
-  //
-  //   assert_eq!(value.borrow(), Some(&10000));
-  // }
+  #[test]
+  fn can_get_elements() {
+    let mut bst: BST<&str, usize> = BST::new();
+
+    bst.put("Root", 2);
+    bst.put("L.", 4);
+    bst.put("W.", 45);
+    bst.put("G.", 70);
+    bst.put("J.", 70);
+    bst.put("H.", 10000);
+
+    let value = bst.get(&"H.");
+
+    assert_eq!(value, Some(&10000));
+  }
+
+  #[test]
+  fn has_perfect_black_balance() {
+    let mut bst: BST<&str, usize> = BST::new();
+
+    // bst.put("A", 1);
+    // bst.put("B", 2);
+    // bst.put("C", 3);
+    // bst.put("D", 4);
+    // bst.put("E", 5);
+    // bst.put("F", 6);
+    // bst.put("G", 7);
+    // bst.put("H", 8);
+    // bst.put("I", 9);
+    // bst.put("J", 10);
+    // bst.put("K", 11);
+    // bst.put("L", 12);
+
+    bst.put("S", 1);
+    bst.put("E", 2);
+    bst.put("A", 3);
+    bst.put("R", 4);
+    bst.put("C", 5);
+    bst.put("H", 6);
+    bst.put("X", 7);
+    bst.put("M", 8);
+    bst.put("P", 9);
+    bst.put("L", 10);
+
+    let (min, max) = bst.get_min_max_black_depth();
+
+    println!("tree:");
+    println!("{}", &bst);
+    println!("Black depth min: {}, max: {}", min, max);
+
+    assert_eq!(min, max);
+  }
 }
