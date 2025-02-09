@@ -2,52 +2,48 @@ use std::iter::zip;
 pub struct Solution {}
 
 impl Solution {
-  pub fn is_safe(n: i32, board: &Vec<Vec<bool>>, row: i32, col: i32) -> bool {
-    let r = row as usize;
-    let c = col as usize;
-    let n = n as usize;
+  #[inline(always)]
+  pub fn is_safe(n: usize, board: &Vec<Vec<bool>>, row: usize, col: usize) -> bool {
+    let r = row;
+    let c = col;
 
-    for col in 0..c {
-      if board[r][col] {
-        return false;
-      }
+    // check all columns in the current row
+    if (0..c).any(|col| board[r][col]) {
+      return false;
+    }
+
+    // check all rows in the current col
+    if (0..r).any(|row| board[row][c]) {
+      return false;
     }
 
     // check upper left diagonals for collisions
-    let r_iter = (0..r).rev();
-    let c_iter = (0..c).rev();
-    let pair_iter = zip(r_iter, c_iter);
-    for (ri, ci) in pair_iter {
-      if board[ri][ci] {
-        return false;
-      }
+    if zip((0..r).rev(), (0..c).rev()).any(|(row, col)| board[row][col]) {
+      return false;
     }
 
     // check lower left diagonals for collisions
-    let r_iter = (r + 1)..n;
-    let c_iter = (0..c).rev();
-    let pair_iter = zip(r_iter, c_iter);
-    for (ri, ci) in pair_iter {
-      if board[ri][ci] {
-        return false;
-      }
+    if zip(r + 1..n, (0..c).rev()).any(|(row, col)| board[row][col]) {
+      return false;
     }
 
     true
   }
 
-  pub fn place_queen(board: &mut Vec<Vec<bool>>, row: i32, col: i32) {
-    board[row as usize][col as usize] = true;
+  #[inline(always)]
+  pub fn place_queen(board: &mut Vec<Vec<bool>>, row: usize, col: usize) {
+    board[row][col] = true;
   }
 
-  pub fn remove_queen(board: &mut Vec<Vec<bool>>, row: i32, col: i32) {
-    board[row as usize][col as usize] = false;
+  #[inline(always)]
+  pub fn remove_queen(board: &mut Vec<Vec<bool>>, row: usize, col: usize) {
+    board[row][col] = false;
   }
 
-  pub fn queens_r(n: i32, mut board: &mut Vec<Vec<bool>>, col: i32, good_boards: &mut i32) -> bool {
+  pub fn queens_r(n: usize, mut board: &mut Vec<Vec<bool>>, col: usize, good_boards: &mut usize) {
     if col == n {
       *good_boards = *good_boards + 1;
-      return true;
+      return;
     }
 
     // find an empty row starting at 0
@@ -59,16 +55,12 @@ impl Solution {
         Solution::remove_queen(&mut board, r, col);
       }
     }
-
-    // return false if we fall through here, because we should
-    // have returned true in the loop above if we found a solution
-    false
   }
 
-  pub fn total_n_queens(n: i32) -> i32 {
-    let u_n = n as usize;
+  pub fn total_n_queens(n: usize) -> usize {
+    let u_n = n;
     let mut board = vec![vec![false; u_n]; u_n];
-    let mut num_good_boards = 0;
+    let mut num_good_boards = 0usize;
 
     Solution::queens_r(n, &mut board, 0, &mut num_good_boards);
 
@@ -94,8 +86,8 @@ mod tests {
 
   #[test]
   fn nq_test3() {
-    let n = Solution::total_n_queens(18);
-    println!("9x9 total slns: {n}");
+    let n = Solution::total_n_queens(12);
+    println!("6x6 total slns: {n}");
   }
 
   #[test]
