@@ -4,7 +4,7 @@ use std::cmp;
 use std::fmt::{Debug, Display};
 use std::ptr;
 
-trait TreeStat {
+pub trait TreeStat {
   fn get_min_max_black_depth(&self) -> (usize, usize);
 }
 

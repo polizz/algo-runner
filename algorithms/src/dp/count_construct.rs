@@ -23,7 +23,7 @@ fn do_count_construct(target: &'static str, wordbank: &Vec<&str>, memo: &mut Mem
     }
   }
 
-  memo.insert(target.clone(), branch_counts);
+  memo.insert(target, branch_counts);
   return branch_counts;
 }
 

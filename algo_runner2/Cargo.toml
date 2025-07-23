@@ -1,0 +1,9 @@
+[package]
+name = "algo_runner2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+argh = "0.1.7"
+algorithms = { path = "../algorithms" }
+data_structures = { path = "../data_structures" }

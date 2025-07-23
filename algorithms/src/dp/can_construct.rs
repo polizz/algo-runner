@@ -16,14 +16,14 @@ fn do_can_construct(target: &'static str, wordbank: &Vec<&str>, memo: &mut Memo)
       if idx == 0 {
         let suffix = &target[word.len()..];
         if do_can_construct(suffix, wordbank, memo) {
-          memo.insert(suffix.clone(), true);
+          memo.insert(suffix, true);
           return true;
         }
       }
     }
   }
 
-  let false_string = target.clone();
+  let false_string = target;
   memo.insert(false_string, false);
   return false;
 }

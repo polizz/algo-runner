@@ -10,11 +10,7 @@ impl Permu {
     k: usize,
   ) {
     if word.len() == k {
-      let to_string: String = word.clone().iter().fold("".to_string(), |mut acc, l| {
-        acc.push_str(l);
-        acc
-      });
-      words.push(to_string);
+      words.push(word.join(""));
       return;
       // match word[0].as_bytes() {
       //   b"l" => { //| b"s" | b"n" | b"i"

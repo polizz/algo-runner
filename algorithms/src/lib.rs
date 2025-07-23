@@ -24,6 +24,8 @@ pub use dp::grid_travel::get_all_grid_paths;
 pub use dp::grid_travel_tab::calc_paths;
 pub use dp::how_sum::how_sum;
 pub use dp::how_sum_tab::how_sum_tab;
+pub use dp::levenshtein::get_distance_matrix;
+pub use dp::levenshtein_r::{get_distance, get_distance_r};
 
 mod backtracking;
 pub use backtracking::Solution;

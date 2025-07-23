@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use std::collections::{HashSet, VecDeque};
 
 type Location = (usize, usize);

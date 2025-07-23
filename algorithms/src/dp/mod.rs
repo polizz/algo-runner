@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 pub mod grid_travel;
 pub use grid_travel::get_all_grid_paths;
 
@@ -48,3 +49,6 @@ pub use all_construct_tab::all_construct;
 
 pub mod levenshtein;
 pub use levenshtein::get_distance_matrix;
+
+pub mod levenshtein_r;
+pub use levenshtein_r::{get_distance, get_distance_r};

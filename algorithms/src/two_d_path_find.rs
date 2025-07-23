@@ -1,6 +1,6 @@
 // for a map of product islands in a store (1's) and walking isles in
 // between (0's) find any starting coordinate for each island of products
-
+#![allow(non_camel_case_types)]
 use std::collections::{HashSet, VecDeque};
 
 type Location = (usize, usize);

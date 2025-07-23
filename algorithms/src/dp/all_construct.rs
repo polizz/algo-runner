@@ -29,7 +29,7 @@ fn do_all_construct(
           }
 
           found_completions.extend(words_found);
-          memo.insert(target.clone(), Some(found_completions.clone()));
+          memo.insert(target, Some(found_completions.clone()));
         }
       }
     }
