@@ -118,6 +118,12 @@ impl TwoD_PathFinding {
       println!("Marking: i:{i} j:{j}");
 
       for (i, j) in TwoD_PathFinding::get_candidates_locs(location, m, n) {
+        println!("Testing i:{i} j:{j}");
+        if grid[i][j] == 0 || seen.contains(&(i, j)) {
+          continue;
+        }
+
+        seen.insert((i, j));
         mark_connected_points(grid, seen, i, j, m, n);
       }
     }
